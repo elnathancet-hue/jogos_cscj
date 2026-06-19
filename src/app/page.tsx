@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { createClient } from "@/lib/supabase/server";
 import { PageShell } from "@/components/ui/PageShell";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -44,7 +46,19 @@ export default async function Home() {
       <PageHeader
         title="Jogos CSCJ"
         description="Plataforma SaaS de jogos educativos e culturais — escolas, museus, empresas e projetos culturais."
-        action={<Badge variant={status.variant}>{status.label}</Badge>}
+        action={
+          <div className="flex items-center gap-3">
+            <Link href="/auth/login" className="text-sm font-medium text-blue-700 hover:underline">
+              Entrar
+            </Link>
+            <Link
+              href="/auth/register"
+              className="inline-flex h-10 items-center justify-center rounded-lg border border-blue-600 bg-blue-600 px-4 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+            >
+              Criar conta
+            </Link>
+          </div>
+        }
       />
 
       <div className="grid gap-6 sm:grid-cols-2">

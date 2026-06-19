@@ -28,7 +28,11 @@ begin
 end $$;
 
 -- ---------------------------------------------------------------------------
--- 2. Cria um perfil para cada novo usuário do auth.
+-- 2. Cria um perfil para cada novo usuário do auth e, se o cadastro trouxer
+--    'org_name' nos metadados, já cria a organização (o gatilho
+--    handle_new_organization torna o usuário org_admin automaticamente).
+--    Roda como SECURITY DEFINER, então funciona mesmo com confirmação de
+--    e-mail ligada (sem depender de sessão).
 -- ---------------------------------------------------------------------------
 create or replace function public.handle_new_user()
 returns trigger
@@ -36,7 +40,12 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  v_org_name text := nullif(trim(new.raw_user_meta_data ->> 'org_name'), '');
+  v_org_type public.organization_type;
+  v_slug     text;
 begin
+  -- Perfil (1:1 com auth.users).
   insert into public.profiles (id, full_name, email, avatar_url)
   values (
     new.id,
@@ -45,6 +54,27 @@ begin
     new.raw_user_meta_data ->> 'avatar_url'
   )
   on conflict (id) do nothing;
+
+  -- Organização (opcional, vinda do cadastro).
+  if v_org_name is not null then
+    v_org_type := case
+      when (new.raw_user_meta_data ->> 'org_type')
+           in ('school', 'museum', 'company', 'cultural_project', 'other')
+      then (new.raw_user_meta_data ->> 'org_type')::public.organization_type
+      else 'other'
+    end;
+
+    -- slug a partir do nome + sufixo do id para garantir unicidade.
+    v_slug := lower(regexp_replace(v_org_name, '[^a-zA-Z0-9]+', '-', 'g'));
+    v_slug := trim(both '-' from v_slug);
+    if v_slug = '' then v_slug := 'org'; end if;
+    v_slug := v_slug || '-' || substr(new.id::text, 1, 8);
+
+    insert into public.organizations (name, slug, organization_type, created_by)
+    values (v_org_name, v_slug, v_org_type, new.id);
+    -- handle_new_organization adiciona o vínculo org_admin automaticamente.
+  end if;
+
   return new;
 end;
 $$;
