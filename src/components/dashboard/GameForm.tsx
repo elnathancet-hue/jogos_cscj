@@ -7,8 +7,10 @@ import { EMPTY_FORM_STATE } from "@/lib/forms";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
+import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { ImageUpload } from "@/components/ui/ImageUpload";
+import { GAME_TYPES, GAME_TYPE_LABELS } from "@/lib/games/types";
 
 type GameFormProps = {
   mode: "create" | "edit";
@@ -47,6 +49,18 @@ export function GameForm({ mode, defaults }: GameFormProps) {
       <Field label="Título" htmlFor="title">
         <Input id="title" name="title" defaultValue={defaults?.title ?? ""} required />
       </Field>
+
+      {!isEdit && (
+        <Field label="Tipo de jogo" htmlFor="gameType" hint="Define o conteúdo que você vai montar.">
+          <Select id="gameType" name="gameType" defaultValue="quiz">
+            {GAME_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {GAME_TYPE_LABELS[t]}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      )}
 
       <Field label="Descrição" htmlFor="description" hint="Opcional.">
         <Textarea

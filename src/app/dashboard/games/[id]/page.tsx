@@ -14,7 +14,12 @@ import { Badge } from "@/components/ui/Badge";
 import { GameForm } from "@/components/dashboard/GameForm";
 import { GameStatusActions } from "@/components/dashboard/GameStatusActions";
 import { QuizEditor } from "@/components/dashboard/QuizEditor";
+import { MemoryEditor } from "@/components/dashboard/MemoryEditor";
+import { CrosswordEditor } from "@/components/dashboard/CrosswordEditor";
 import { readQuizQuestions } from "@/lib/games/quiz";
+import { readMemoryPairs } from "@/lib/games/memory";
+import { readCrosswordEntries } from "@/lib/games/crossword";
+import { getGameType, GAME_TYPE_LABELS } from "@/lib/games/types";
 import type { BadgeVariant } from "@/design-system/variants";
 
 export const metadata: Metadata = { title: "Jogo · Jogos CSCJ" };
@@ -151,17 +156,28 @@ export default async function GamePage({
         </div>
       </div>
 
-      {canEdit && (
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Conteúdo do jogo — Quiz</CardTitle>
-          </CardHeader>
-          <QuizEditor
-            gameId={game.id}
-            initialQuestions={readQuizQuestions(game.settings)}
-          />
-        </Card>
-      )}
+      {canEdit && (() => {
+        const gameType = getGameType(game.settings) ?? "quiz";
+        return (
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Conteúdo do jogo — {GAME_TYPE_LABELS[gameType]}</CardTitle>
+            </CardHeader>
+            {gameType === "quiz" && (
+              <QuizEditor gameId={game.id} initialQuestions={readQuizQuestions(game.settings)} />
+            )}
+            {gameType === "memory" && (
+              <MemoryEditor gameId={game.id} initialPairs={readMemoryPairs(game.settings)} />
+            )}
+            {gameType === "crossword" && (
+              <CrosswordEditor
+                gameId={game.id}
+                initialEntries={readCrosswordEntries(game.settings)}
+              />
+            )}
+          </Card>
+        );
+      })()}
     </>
   );
 }

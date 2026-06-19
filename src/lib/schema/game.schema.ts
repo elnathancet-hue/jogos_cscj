@@ -1,5 +1,6 @@
 // src/lib/schema/game.schema.ts
 import { z } from "zod";
+import { GAME_TYPES } from "@/lib/games/types";
 
 export const GAME_STATUSES = ["draft", "published", "archived"] as const;
 export type GameStatus = (typeof GAME_STATUSES)[number];
@@ -14,6 +15,8 @@ export const gameFormSchema = z.object({
   title: z.string().min(2, "Informe o título do jogo.").max(200),
   description: z.string().max(5000).optional().or(z.literal("")),
   coverImageUrl: z.string().url("URL inválida.").max(1000).optional().or(z.literal("")),
+  // usado só na criação; ignorado na edição.
+  gameType: z.enum(GAME_TYPES).optional(),
 });
 
 export type GameFormInput = z.infer<typeof gameFormSchema>;

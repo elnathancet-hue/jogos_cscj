@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getActiveOrganization } from "@/lib/auth/org";
 import { hasPermission } from "@/lib/auth/permissions";
 import { gameFormSchema, GAME_STATUSES } from "@/lib/schema/game.schema";
-import { quizSettingsSchema } from "@/lib/games/quiz";
+import { gameSettingsSchema } from "@/lib/games/types";
 import type { FormState } from "@/lib/forms";
 
 export async function createGameAction(
@@ -19,6 +19,7 @@ export async function createGameAction(
     title: formData.get("title"),
     description: formData.get("description"),
     coverImageUrl: formData.get("coverImageUrl"),
+    gameType: formData.get("gameType") || undefined,
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
@@ -41,6 +42,8 @@ export async function createGameAction(
     title: parsed.data.title,
     description: parsed.data.description || null,
     cover_image_url: parsed.data.coverImageUrl || null,
+    // nasce só com o tipo; o conteúdo é preenchido no editor.
+    settings: { type: parsed.data.gameType ?? "quiz" },
   });
 
   if (error) return { error: "Não foi possível criar o jogo." };
@@ -101,7 +104,7 @@ export async function updateGameContentAction(
     return { error: "Conteúdo inválido." };
   }
 
-  const parsed = quizSettingsSchema.safeParse(raw);
+  const parsed = gameSettingsSchema.safeParse(raw);
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Conteúdo inválido." };
   }
