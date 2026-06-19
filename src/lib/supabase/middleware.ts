@@ -37,7 +37,12 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
-  const isAuthRoute = path.startsWith("/auth") && !path.startsWith("/auth/callback");
+  // Rotas de auth das quais um usuário logado é redirecionado ao dashboard —
+  // exceto callback e aceite de convite, que precisam funcionar logado.
+  const isAuthRoute =
+    path.startsWith("/auth") &&
+    !path.startsWith("/auth/callback") &&
+    !path.startsWith("/auth/accept-invite");
 
   if (!user && path.startsWith("/dashboard")) {
     const url = request.nextUrl.clone();

@@ -21,6 +21,7 @@ const ORDEM = [
   "sql/10_entidades/convites.sql",
   "sql/10_entidades/logs_auditoria.sql",
   "sql/20_dados/seed_papeis.sql",
+  "sql/30_rpc/convites_rpc.sql",
   "sql/99_gatilhos.sql",
 ];
 
