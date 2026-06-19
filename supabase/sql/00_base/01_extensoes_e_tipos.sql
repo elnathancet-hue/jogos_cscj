@@ -1,64 +1,64 @@
 /*
- * ---------------------------------------------------------------------------
- * Migration: enums and extensions
- * Area: Users / Organizations (SaaS core)
- * ---------------------------------------------------------------------------
- * Defines every enum used by the user/organization domain plus the generic
- * `updated_at` timestamp trigger function. Idempotent: safe to re-run.
- * ---------------------------------------------------------------------------
+ * ===========================================================================
+ * BASE — Extensões e Tipos
+ * ===========================================================================
+ * Define as extensões necessárias, todos os tipos (enums) do domínio de
+ * Usuários/Organizações e o gatilho genérico de timestamps.
+ * Idempotente: pode rodar quantas vezes quiser.
+ * ===========================================================================
  */
 
--- pgcrypto provides gen_random_uuid() (available by default on Supabase).
+-- gen_random_uuid() vem do pgcrypto (já disponível no Supabase).
 create extension if not exists pgcrypto;
 
 -- ---------------------------------------------------------------------------
--- Enums
+-- Tipos (enums)
 -- ---------------------------------------------------------------------------
 
--- Account lifecycle for a person on the platform.
+-- Situação de uma pessoa na plataforma.
 do $$ begin
   create type public.user_status as enum ('active', 'inactive', 'blocked');
 exception when duplicate_object then null; end $$;
 
--- What kind of institution an organization is.
+-- Tipo de instituição que a organização representa.
 do $$ begin
   create type public.organization_type as enum (
     'school', 'museum', 'company', 'cultural_project', 'other'
   );
 exception when duplicate_object then null; end $$;
 
--- Organization lifecycle.
+-- Situação da organização.
 do $$ begin
   create type public.organization_status as enum ('active', 'inactive', 'suspended');
 exception when duplicate_object then null; end $$;
 
--- Commercial plan attached to an organization.
+-- Plano comercial da organização.
 do $$ begin
   create type public.organization_plan as enum ('free', 'starter', 'pro', 'enterprise');
 exception when duplicate_object then null; end $$;
 
--- Roles a person can hold WITHIN an organization.
--- NOTE: platform super_admin is intentionally NOT here; it lives on
--- public.profiles.is_super_admin because it is platform-wide, not org-scoped.
+-- Papéis que uma pessoa pode ter DENTRO de uma organização.
+-- OBS: o super admin da plataforma NÃO entra aqui — ele é a flag
+-- public.profiles.is_super_admin, porque é global, não escopado por organização.
 do $$ begin
   create type public.member_role as enum (
     'org_admin', 'creator', 'collaborator', 'viewer'
   );
 exception when duplicate_object then null; end $$;
 
--- Membership lifecycle within an organization.
+-- Situação do vínculo de um membro com a organização.
 do $$ begin
   create type public.member_status as enum ('active', 'invited', 'removed');
 exception when duplicate_object then null; end $$;
 
--- Invitation lifecycle.
+-- Situação de um convite.
 do $$ begin
   create type public.invitation_status as enum (
     'pending', 'accepted', 'expired', 'revoked'
   );
 exception when duplicate_object then null; end $$;
 
--- Granular permissions. Extend by adding values (enums are append-only).
+-- Permissões granulares. Para estender, basta adicionar valores (enums só crescem).
 do $$ begin
   create type public.app_permission as enum (
     'users.view',
@@ -77,7 +77,7 @@ do $$ begin
 exception when duplicate_object then null; end $$;
 
 -- ---------------------------------------------------------------------------
--- Generic trigger: keep updated_at in sync on every UPDATE.
+-- Gatilho genérico: mantém created_at / updated_at automaticamente.
 -- ---------------------------------------------------------------------------
 create or replace function public.trigger_set_timestamps()
 returns trigger
@@ -96,4 +96,4 @@ end;
 $$;
 
 comment on function public.trigger_set_timestamps() is
-  'Generic BEFORE INSERT/UPDATE trigger that maintains created_at/updated_at.';
+  'Gatilho genérico BEFORE INSERT/UPDATE que mantém created_at/updated_at.';

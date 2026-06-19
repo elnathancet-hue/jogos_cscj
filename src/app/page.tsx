@@ -54,7 +54,7 @@ export default async function Home() {
       </div>
 
       <ol className="space-y-2 text-sm text-slate-400">
-        <li>1. Rodar <code className="text-brand">supabase/_apply_all.sql</code> no SQL Editor.</li>
+        <li>1. Rodar <code className="text-brand">supabase/aplicar_tudo.sql</code> no SQL Editor.</li>
         <li>2. Construir auth + telas (perfil, organização, equipe).</li>
         <li>3. Módulo de jogos, turmas e resultados.</li>
       </ol>

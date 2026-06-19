@@ -1,11 +1,11 @@
 /*
- * ---------------------------------------------------------------------------
- * Rollback for the User / Organization area.
- * ---------------------------------------------------------------------------
- * NOT auto-run by `supabase db push`. Apply manually to fully undo the
- * 20260615120000–20260615120500 migrations. Drops in dependency order.
- * WARNING: destroys all data in these tables.
- * ---------------------------------------------------------------------------
+ * ===========================================================================
+ * ROLLBACK — Área de Usuários / Organizações
+ * ===========================================================================
+ * NÃO roda automaticamente. Cole no SQL Editor para desfazer TUDO que o
+ * aplicar_tudo.sql criou. Remove na ordem de dependência.
+ * ATENÇÃO: apaga todos os dados dessas tabelas.
+ * ===========================================================================
  */
 
 drop trigger if exists on_auth_user_created on auth.users;

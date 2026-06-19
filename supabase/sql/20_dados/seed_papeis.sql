@@ -1,11 +1,11 @@
 /*
- * ---------------------------------------------------------------------------
- * Migration: seed roles + role_permissions (reference data)
- * ---------------------------------------------------------------------------
- * Mirrors the ROLE_PERMISSIONS map from the spec. Idempotent via ON CONFLICT.
- * super_admin is NOT seeded here: it is the platform-wide profiles.is_super_admin
- * flag and is granted every permission directly by has_org_permission().
- * ---------------------------------------------------------------------------
+ * ===========================================================================
+ * DADOS INICIAIS — papéis e permissões
+ * ===========================================================================
+ * Espelha o mapa ROLE_PERMISSIONS da especificação. Idempotente (ON CONFLICT).
+ * super_admin NÃO é semeado aqui: é a flag profiles.is_super_admin e recebe
+ * todas as permissões direto no has_org_permission().
+ * ===========================================================================
  */
 
 insert into public.roles (key, name, description) values
@@ -17,7 +17,7 @@ on conflict (key) do update
   set name = excluded.name,
       description = excluded.description;
 
--- org_admin: everything except platform-only concerns.
+-- org_admin: tudo, menos o que é exclusivo da plataforma.
 insert into public.role_permissions (role_key, permission_key)
 select 'org_admin', perm
 from unnest(array[
@@ -27,7 +27,7 @@ from unnest(array[
 ]::public.app_permission[]) as perm
 on conflict (role_key, permission_key) do nothing;
 
--- creator: create/edit/publish own games + view results.
+-- creator: cria/edita/publica os próprios jogos + vê resultados.
 insert into public.role_permissions (role_key, permission_key)
 select 'creator', perm
 from unnest(array[
@@ -35,7 +35,7 @@ from unnest(array[
 ]::public.app_permission[]) as perm
 on conflict (role_key, permission_key) do nothing;
 
--- collaborator: view + edit games only.
+-- collaborator: só ver + editar jogos.
 insert into public.role_permissions (role_key, permission_key)
 select 'collaborator', perm
 from unnest(array[
@@ -43,7 +43,7 @@ from unnest(array[
 ]::public.app_permission[]) as perm
 on conflict (role_key, permission_key) do nothing;
 
--- viewer: read-only.
+-- viewer: somente leitura.
 insert into public.role_permissions (role_key, permission_key)
 select 'viewer', perm
 from unnest(array[

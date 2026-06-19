@@ -1,15 +1,16 @@
 /*
- * ---------------------------------------------------------------------------
- * Migration: triggers
- * ---------------------------------------------------------------------------
- *  1. timestamps  — maintain created_at/updated_at on every domain table.
- *  2. handle_new_user — create a public.profiles row when someone signs up.
- *  3. handle_new_organization — make the creator the first org_admin.
- * ---------------------------------------------------------------------------
+ * ===========================================================================
+ * GATILHOS
+ * ===========================================================================
+ *  1. timestamps          — mantém created_at/updated_at em cada tabela.
+ *  2. handle_new_user      — cria public.profiles quando alguém se cadastra.
+ *  3. handle_new_organization — torna quem cria a org o primeiro org_admin.
+ * Rodam por último, quando todas as tabelas e funções já existem.
+ * ===========================================================================
  */
 
 -- ---------------------------------------------------------------------------
--- 1. updated_at maintenance
+-- 1. Manutenção de updated_at
 -- ---------------------------------------------------------------------------
 do $$
 declare
@@ -27,7 +28,7 @@ begin
 end $$;
 
 -- ---------------------------------------------------------------------------
--- 2. Auto-create a profile for every new auth user.
+-- 2. Cria um perfil para cada novo usuário do auth.
 -- ---------------------------------------------------------------------------
 create or replace function public.handle_new_user()
 returns trigger
@@ -54,9 +55,9 @@ create trigger on_auth_user_created
   for each row execute function public.handle_new_user();
 
 -- ---------------------------------------------------------------------------
--- 3. The user who creates an organization becomes its first org_admin.
---    SECURITY DEFINER so the membership insert bypasses the RLS insert policy
---    (which would otherwise require the user to ALREADY be an admin).
+-- 3. Quem cria a organização vira o primeiro org_admin.
+--    SECURITY DEFINER para o insert do membro ignorar a política de RLS
+--    (que exigiria o usuário JÁ ser admin).
 -- ---------------------------------------------------------------------------
 create or replace function public.handle_new_organization()
 returns trigger
