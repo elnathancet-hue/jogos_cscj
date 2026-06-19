@@ -17,6 +17,7 @@ export async function createGameAction(
   const parsed = gameFormSchema.safeParse({
     title: formData.get("title"),
     description: formData.get("description"),
+    coverImageUrl: formData.get("coverImageUrl"),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
@@ -38,6 +39,7 @@ export async function createGameAction(
     created_by: user?.id ?? null,
     title: parsed.data.title,
     description: parsed.data.description || null,
+    cover_image_url: parsed.data.coverImageUrl || null,
   });
 
   if (error) return { error: "Não foi possível criar o jogo." };
@@ -56,6 +58,7 @@ export async function updateGameAction(
   const parsed = gameFormSchema.safeParse({
     title: formData.get("title"),
     description: formData.get("description"),
+    coverImageUrl: formData.get("coverImageUrl"),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
@@ -67,6 +70,7 @@ export async function updateGameAction(
     .update({
       title: parsed.data.title,
       description: parsed.data.description || null,
+      cover_image_url: parsed.data.coverImageUrl || null,
     })
     .eq("id", gameId.data)
     .select("id");

@@ -38,7 +38,7 @@ export default async function GamePage({
 
   const { data: game } = await supabase
     .from("games")
-    .select("id, organization_id, created_by, title, description, status")
+    .select("id, organization_id, created_by, title, description, status, cover_image_url")
     .eq("id", id)
     .maybeSingle();
 
@@ -64,6 +64,7 @@ export default async function GamePage({
   const canPublish = canEdit && hasPermission(role, "games.publish");
   const canDelete =
     role === "org_admin" || (isOwner && hasPermission(role, "games.delete"));
+  const canViewResults = hasPermission(role, "results.view");
 
   return (
     <>
@@ -88,6 +89,7 @@ export default async function GamePage({
                 gameId: game.id,
                 title: game.title,
                 description: game.description ?? "",
+                coverImageUrl: game.cover_image_url ?? "",
               }}
             />
           ) : (
@@ -103,19 +105,48 @@ export default async function GamePage({
           )}
         </Card>
 
-        {(canPublish || canDelete) && (
+        <div className="space-y-6">
+          {(canPublish || canDelete) && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Ações</CardTitle>
+              </CardHeader>
+              <GameStatusActions
+                gameId={game.id}
+                status={status}
+                canPublish={canPublish}
+                canDelete={canDelete}
+              />
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
-              <CardTitle>Ações</CardTitle>
+              <CardTitle>Sessões e resultados</CardTitle>
             </CardHeader>
-            <GameStatusActions
-              gameId={game.id}
-              status={status}
-              canPublish={canPublish}
-              canDelete={canDelete}
-            />
+            <div className="space-y-2 text-sm">
+              {canViewResults && (
+                <Link
+                  href={`/dashboard/games/${game.id}/results`}
+                  className="block text-blue-700 hover:underline"
+                >
+                  Ver resultados →
+                </Link>
+              )}
+              {status === "published" ? (
+                <Link
+                  href={`/play/${game.id}`}
+                  className="block text-blue-700 hover:underline"
+                  target="_blank"
+                >
+                  Abrir página pública de jogar ↗
+                </Link>
+              ) : (
+                <p className="text-slate-500">Publique o jogo para gerar o link público.</p>
+              )}
+            </div>
           </Card>
-        )}
+        </div>
       </div>
     </>
   );

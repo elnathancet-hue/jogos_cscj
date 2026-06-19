@@ -21,8 +21,12 @@ const ORDEM = [
   "sql/10_entidades/convites.sql",
   "sql/10_entidades/logs_auditoria.sql",
   "sql/10_entidades/jogos.sql",
+  "sql/10_entidades/turmas.sql",
+  "sql/10_entidades/resultados.sql",
   "sql/20_dados/seed_papeis.sql",
   "sql/30_rpc/convites_rpc.sql",
+  "sql/30_rpc/resultados_rpc.sql",
+  "sql/40_storage/buckets.sql",
   "sql/99_gatilhos.sql",
 ];
 

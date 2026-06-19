@@ -8,10 +8,16 @@ import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
+import { ImageUpload } from "@/components/ui/ImageUpload";
 
 type GameFormProps = {
   mode: "create" | "edit";
-  defaults?: { gameId: string; title: string; description: string };
+  defaults?: {
+    gameId: string;
+    title: string;
+    description: string;
+    coverImageUrl?: string;
+  };
 };
 
 export function GameForm({ mode, defaults }: GameFormProps) {
@@ -48,6 +54,14 @@ export function GameForm({ mode, defaults }: GameFormProps) {
           name="description"
           rows={5}
           defaultValue={defaults?.description ?? ""}
+        />
+      </Field>
+
+      <Field label="Capa do jogo" hint="Opcional — imagem exibida no card.">
+        <ImageUpload
+          name="coverImageUrl"
+          defaultUrl={defaults?.coverImageUrl ?? ""}
+          pathPrefix="game-covers"
         />
       </Field>
 

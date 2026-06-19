@@ -12,6 +12,7 @@ import { Select } from "@/components/ui/Select";
 const LINKS = [
   { href: "/dashboard", label: "Visão geral" },
   { href: "/dashboard/games", label: "Jogos" },
+  { href: "/dashboard/classes", label: "Turmas" },
   { href: "/dashboard/team", label: "Equipe" },
   { href: "/dashboard/organization", label: "Organização" },
   { href: "/dashboard/profile", label: "Perfil" },

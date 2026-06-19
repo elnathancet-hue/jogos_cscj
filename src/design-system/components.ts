@@ -21,6 +21,7 @@ export const DESIGN_SYSTEM_COMPONENTS: Record<string, ComponentStatus> = {
   PageShell: "ready",
   PageHeader: "ready",
   EmptyState: "ready",
+  ImageUpload: "ready",
 
   // Próximos a implementar (não usar antes de existirem):
   Avatar: "planned",

@@ -13,6 +13,7 @@ export const GAME_STATUS_LABELS: Record<GameStatus, string> = {
 export const gameFormSchema = z.object({
   title: z.string().min(2, "Informe o título do jogo.").max(200),
   description: z.string().max(5000).optional().or(z.literal("")),
+  coverImageUrl: z.string().url("URL inválida.").max(1000).optional().or(z.literal("")),
 });
 
 export type GameFormInput = z.infer<typeof gameFormSchema>;

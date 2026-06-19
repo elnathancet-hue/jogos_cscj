@@ -12,6 +12,7 @@ import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
+import { ImageUpload } from "@/components/ui/ImageUpload";
 
 type OrganizationFormProps = {
   canEdit: boolean;
@@ -84,8 +85,12 @@ export function OrganizationForm({ canEdit, defaults }: OrganizationFormProps) {
         />
       </Field>
 
-      <Field label="Logo (URL)" htmlFor="logoUrl">
-        <Input id="logoUrl" name="logoUrl" defaultValue={defaults.logoUrl} disabled={!canEdit} />
+      <Field label="Logo" hint="Imagem da organização.">
+        {canEdit ? (
+          <ImageUpload name="logoUrl" defaultUrl={defaults.logoUrl} pathPrefix="org-logos" />
+        ) : (
+          <Input value={defaults.logoUrl} disabled readOnly />
+        )}
       </Field>
 
       {canEdit && (

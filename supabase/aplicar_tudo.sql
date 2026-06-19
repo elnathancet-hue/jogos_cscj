@@ -746,6 +746,146 @@ create trigger set_timestamps before insert or update on public.games
   for each row execute function public.trigger_set_timestamps();
 
 
+-- ===== sql/10_entidades/turmas.sql =====
+/*
+ * ===========================================================================
+ * ENTIDADE — turmas / públicos (public.classes)
+ * ===========================================================================
+ * Agrupa jogadores (turma de escola, grupo de museu, público de evento).
+ * Tem um "code" curto para a entrada identificada do jogador.
+ * Depende de: organizations + funções de autorização.
+ * ===========================================================================
+ */
+
+create table if not exists public.classes (
+  id              uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  name            varchar(120) not null,
+  description     text,
+  code            varchar(12) not null unique
+                    default upper(substr(md5(gen_random_uuid()::text), 1, 6)),
+  created_by      uuid references auth.users(id) on delete set null,
+  created_at      timestamptz not null default now(),
+  updated_at      timestamptz not null default now()
+);
+
+comment on table public.classes is
+  'Turmas/públicos da organização. code = entrada identificada do jogador.';
+
+create index if not exists classes_org_idx
+  on public.classes (organization_id, created_at desc);
+
+alter table public.classes enable row level security;
+
+-- --- Políticas RLS ---------------------------------------------------------
+-- Vê: qualquer membro da organização.
+drop policy if exists classes_select on public.classes;
+create policy classes_select on public.classes
+  for select to authenticated
+  using (public.is_org_member(organization_id) or public.is_super_admin());
+
+-- Cria: admin ou criador, como ele mesmo.
+drop policy if exists classes_insert on public.classes;
+create policy classes_insert on public.classes
+  for insert to authenticated
+  with check (
+    created_by = (select auth.uid())
+    and (
+      public.get_org_role(organization_id) in ('org_admin', 'creator')
+      or public.is_super_admin()
+    )
+  );
+
+-- Edita/exclui: admin (qualquer) ou o criador (próprias).
+drop policy if exists classes_update on public.classes;
+create policy classes_update on public.classes
+  for update to authenticated
+  using (
+    public.is_super_admin()
+    or public.is_org_admin(organization_id)
+    or created_by = (select auth.uid())
+  )
+  with check (
+    public.is_super_admin()
+    or public.is_org_admin(organization_id)
+    or created_by = (select auth.uid())
+  );
+
+drop policy if exists classes_delete on public.classes;
+create policy classes_delete on public.classes
+  for delete to authenticated
+  using (
+    public.is_super_admin()
+    or public.is_org_admin(organization_id)
+    or created_by = (select auth.uid())
+  );
+
+-- --- Grants ----------------------------------------------------------------
+grant select, insert, update, delete on public.classes to authenticated;
+
+-- --- Timestamps ------------------------------------------------------------
+drop trigger if exists set_timestamps on public.classes;
+create trigger set_timestamps before insert or update on public.classes
+  for each row execute function public.trigger_set_timestamps();
+
+
+-- ===== sql/10_entidades/resultados.sql =====
+/*
+ * ===========================================================================
+ * ENTIDADE — resultados / sessões de jogo (public.game_results)
+ * ===========================================================================
+ * Guarda cada conclusão de jogo: nome informado, turma (opcional), pontuação,
+ * tempo e data. Jogadores podem ser anônimos — por isso a inserção acontece
+ * APENAS pela função submit_game_result (SECURITY DEFINER, ver 30_rpc).
+ * Não há política de INSERT direta: ninguém escreve aqui sem passar pela RPC.
+ * Depende de: games, classes, organizations.
+ * ===========================================================================
+ */
+
+create table if not exists public.game_results (
+  id               uuid primary key default gen_random_uuid(),
+  organization_id  uuid not null references public.organizations(id) on delete cascade,
+  game_id          uuid not null references public.games(id) on delete cascade,
+  class_id         uuid references public.classes(id) on delete set null,
+  player_name      varchar(120) not null,
+  score            integer not null default 0,
+  duration_seconds integer,
+  metadata         jsonb not null default '{}'::jsonb,
+  created_at       timestamptz not null default now()
+);
+
+comment on table public.game_results is
+  'Resultados de sessões de jogo. Inseridos só via submit_game_result().';
+
+create index if not exists game_results_game_idx
+  on public.game_results (game_id, created_at desc);
+create index if not exists game_results_org_idx
+  on public.game_results (organization_id, created_at desc);
+create index if not exists game_results_class_idx
+  on public.game_results (class_id);
+
+alter table public.game_results enable row level security;
+
+-- --- Políticas RLS ---------------------------------------------------------
+-- Vê: quem tem results.view na organização (admin/criador/observador) ou super admin.
+drop policy if exists game_results_select on public.game_results;
+create policy game_results_select on public.game_results
+  for select to authenticated
+  using (
+    public.has_org_permission(organization_id, 'results.view')
+    or public.is_super_admin()
+  );
+
+-- Exclui: admin/super admin (limpeza). Sem update; inserção só via RPC.
+drop policy if exists game_results_delete on public.game_results;
+create policy game_results_delete on public.game_results
+  for delete to authenticated
+  using (public.is_org_admin(organization_id) or public.is_super_admin());
+
+-- --- Grants ----------------------------------------------------------------
+grant select, delete on public.game_results to authenticated;
+
+
 -- ===== sql/20_dados/seed_papeis.sql =====
 /*
  * ===========================================================================
@@ -865,6 +1005,130 @@ comment on function public.accept_invitation(uuid) is
   'Usuário logado aceita um convite por token e vira membro da organização.';
 
 grant execute on function public.accept_invitation(uuid) to authenticated;
+
+
+-- ===== sql/30_rpc/resultados_rpc.sql =====
+/*
+ * ===========================================================================
+ * RPC — Jogar / Resultados (acesso público / anônimo)
+ * ===========================================================================
+ * get_public_game(id): dados mínimos de um jogo PUBLICADO (anon pode ler).
+ * submit_game_result(...): registra uma sessão (anon pode chamar). Valida que
+ *   o jogo está publicado e resolve a turma pelo código, se houver.
+ * Ambas SECURITY DEFINER — ignoram a RLS de games/classes/game_results.
+ * ===========================================================================
+ */
+
+create or replace function public.get_public_game(p_game_id uuid)
+returns table (id uuid, title text, description text, organization_id uuid)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select g.id, g.title, g.description, g.organization_id
+  from public.games g
+  where g.id = p_game_id and g.status = 'published';
+$$;
+
+comment on function public.get_public_game(uuid) is
+  'Dados públicos de um jogo publicado (para a página de jogar).';
+
+create or replace function public.submit_game_result(
+  p_game_id          uuid,
+  p_player_name      text,
+  p_score            integer default 0,
+  p_duration_seconds integer default null,
+  p_class_code       text default null
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_game      public.games%rowtype;
+  v_class_id  uuid;
+  v_result_id uuid;
+  v_name      text := nullif(trim(p_player_name), '');
+begin
+  if v_name is null then
+    raise exception 'Informe um nome para começar.';
+  end if;
+
+  select * into v_game from public.games where id = p_game_id;
+  if not found then
+    raise exception 'Jogo não encontrado.';
+  end if;
+  if v_game.status <> 'published' then
+    raise exception 'Este jogo não está disponível.';
+  end if;
+
+  -- Turma opcional pelo código (código inválido = segue sem turma).
+  if nullif(trim(p_class_code), '') is not null then
+    select id into v_class_id
+    from public.classes
+    where organization_id = v_game.organization_id
+      and upper(code) = upper(trim(p_class_code))
+    limit 1;
+  end if;
+
+  insert into public.game_results
+    (organization_id, game_id, class_id, player_name, score, duration_seconds)
+  values
+    (v_game.organization_id, p_game_id, v_class_id, left(v_name, 120),
+     greatest(coalesce(p_score, 0), 0), p_duration_seconds)
+  returning id into v_result_id;
+
+  return v_result_id;
+end;
+$$;
+
+comment on function public.submit_game_result(uuid, text, integer, integer, text) is
+  'Registra uma sessão de jogo (jogador anônimo). Valida publicação e turma.';
+
+grant execute on function public.get_public_game(uuid) to anon, authenticated;
+grant execute on function public.submit_game_result(uuid, text, integer, integer, text)
+  to anon, authenticated;
+
+
+-- ===== sql/40_storage/buckets.sql =====
+/*
+ * ===========================================================================
+ * STORAGE — bucket de mídia pública
+ * ===========================================================================
+ * Bucket 'media' (público): capas de jogo e logos de organização. Leitura
+ * pública (são imagens exibidas); escrita por usuários autenticados, que
+ * gerenciam os próprios arquivos (owner = auth.uid()).
+ * ===========================================================================
+ */
+
+insert into storage.buckets (id, name, public)
+values ('media', 'media', true)
+on conflict (id) do nothing;
+
+-- Leitura pública.
+drop policy if exists media_public_read on storage.objects;
+create policy media_public_read on storage.objects
+  for select to public
+  using (bucket_id = 'media');
+
+-- Upload por autenticados (dono = quem subiu).
+drop policy if exists media_insert on storage.objects;
+create policy media_insert on storage.objects
+  for insert to authenticated
+  with check (bucket_id = 'media' and owner = (select auth.uid()));
+
+drop policy if exists media_update on storage.objects;
+create policy media_update on storage.objects
+  for update to authenticated
+  using (bucket_id = 'media' and owner = (select auth.uid()))
+  with check (bucket_id = 'media' and owner = (select auth.uid()));
+
+drop policy if exists media_delete on storage.objects;
+create policy media_delete on storage.objects
+  for delete to authenticated
+  using (bucket_id = 'media' and owner = (select auth.uid()));
 
 
 -- ===== sql/99_gatilhos.sql =====
