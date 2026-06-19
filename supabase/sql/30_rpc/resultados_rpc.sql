@@ -9,14 +9,16 @@
  * ===========================================================================
  */
 
+-- drop necessário: o tipo de retorno mudou (passou a incluir settings).
+drop function if exists public.get_public_game(uuid);
 create or replace function public.get_public_game(p_game_id uuid)
-returns table (id uuid, title text, description text, organization_id uuid)
+returns table (id uuid, title text, description text, organization_id uuid, settings jsonb)
 language sql
 stable
 security definer
 set search_path = public
 as $$
-  select g.id, g.title, g.description, g.organization_id
+  select g.id, g.title, g.description, g.organization_id, g.settings
   from public.games g
   where g.id = p_game_id and g.status = 'published';
 $$;

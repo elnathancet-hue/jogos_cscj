@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getActiveOrganization } from "@/lib/auth/org";
 import { hasPermission } from "@/lib/auth/permissions";
 import { gameFormSchema, GAME_STATUSES } from "@/lib/schema/game.schema";
+import { quizSettingsSchema } from "@/lib/games/quiz";
 import type { FormState } from "@/lib/forms";
 
 export async function createGameAction(
@@ -83,6 +84,42 @@ export async function updateGameAction(
   revalidatePath("/dashboard/games");
   revalidatePath(`/dashboard/games/${gameId.data}`);
   return { message: "Jogo salvo." };
+}
+
+/** Salva o conteúdo do jogo (perguntas do quiz) em games.settings. */
+export async function updateGameContentAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const gameId = z.string().uuid().safeParse(formData.get("gameId"));
+  if (!gameId.success) return { error: "Jogo inválido." };
+
+  let raw: unknown;
+  try {
+    raw = JSON.parse(String(formData.get("settings") ?? ""));
+  } catch {
+    return { error: "Conteúdo inválido." };
+  }
+
+  const parsed = quizSettingsSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Conteúdo inválido." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("games")
+    .update({ settings: parsed.data })
+    .eq("id", gameId.data)
+    .select("id");
+
+  if (error) return { error: "Não foi possível salvar o conteúdo." };
+  if (!data || data.length === 0) {
+    return { error: "Você não tem permissão para editar este jogo." };
+  }
+
+  revalidatePath(`/dashboard/games/${gameId.data}`);
+  return { message: "Conteúdo salvo." };
 }
 
 const statusSchema = z.object({

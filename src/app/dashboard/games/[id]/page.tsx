@@ -13,6 +13,8 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { GameForm } from "@/components/dashboard/GameForm";
 import { GameStatusActions } from "@/components/dashboard/GameStatusActions";
+import { QuizEditor } from "@/components/dashboard/QuizEditor";
+import { readQuizQuestions } from "@/lib/games/quiz";
 import type { BadgeVariant } from "@/design-system/variants";
 
 export const metadata: Metadata = { title: "Jogo · Jogos CSCJ" };
@@ -38,7 +40,7 @@ export default async function GamePage({
 
   const { data: game } = await supabase
     .from("games")
-    .select("id, organization_id, created_by, title, description, status, cover_image_url")
+    .select("id, organization_id, created_by, title, description, status, cover_image_url, settings")
     .eq("id", id)
     .maybeSingle();
 
@@ -148,6 +150,18 @@ export default async function GamePage({
           </Card>
         </div>
       </div>
+
+      {canEdit && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Conteúdo do jogo — Quiz</CardTitle>
+          </CardHeader>
+          <QuizEditor
+            gameId={game.id}
+            initialQuestions={readQuizQuestions(game.settings)}
+          />
+        </Card>
+      )}
     </>
   );
 }
