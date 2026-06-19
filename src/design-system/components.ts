@@ -13,6 +13,7 @@ export const DESIGN_SYSTEM_COMPONENTS: Record<string, ComponentStatus> = {
   Button: "ready",
   Card: "ready",
   Input: "ready",
+  Textarea: "ready",
   Select: "ready",
   Field: "ready",
   Badge: "ready",
@@ -22,7 +23,6 @@ export const DESIGN_SYSTEM_COMPONENTS: Record<string, ComponentStatus> = {
   EmptyState: "ready",
 
   // Próximos a implementar (não usar antes de existirem):
-  Textarea: "planned",
   Avatar: "planned",
   Dropdown: "planned",
   Tabs: "planned",

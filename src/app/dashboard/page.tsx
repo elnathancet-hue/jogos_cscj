@@ -75,12 +75,21 @@ export default async function DashboardPage() {
         />
       )}
 
-      <div className="mt-6">
-        <EmptyState
-          title="Em breve: jogos"
-          description="O módulo de jogos, turmas e resultados entra na próxima fase — cada jogo já nascerá vinculado a esta organização."
-        />
-      </div>
+      {active && (
+        <div className="mt-6">
+          <Card>
+            <h3 className="text-base font-semibold text-slate-950">Jogos</h3>
+            <p className="mt-2 text-sm text-slate-600">
+              Crie e gerencie os jogos da organização.
+            </p>
+            <div className="mt-4">
+              <Link href="/dashboard/games" className="text-sm text-blue-700 hover:underline">
+                Ir para jogos →
+              </Link>
+            </div>
+          </Card>
+        </div>
+      )}
     </>
   );
 }
