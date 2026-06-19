@@ -37,6 +37,17 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
+
+  // Resiliência: se um link de e-mail/OAuth largar o `?code=` em qualquer rota
+  // (ex.: na raiz, por fallback da Site URL), encaminha para o callback que
+  // troca o código pela sessão.
+  const code = request.nextUrl.searchParams.get("code");
+  if (code && !path.startsWith("/auth/callback")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/callback";
+    return NextResponse.redirect(url);
+  }
+
   // Rotas de auth das quais um usuário logado é redirecionado ao dashboard —
   // exceto callback e aceite de convite, que precisam funcionar logado.
   const isAuthRoute =
