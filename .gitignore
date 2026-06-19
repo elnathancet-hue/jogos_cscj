@@ -8,6 +8,11 @@ node_modules/
 out/
 build/
 dist/
+next-env.d.ts
+*.tsbuildinfo
+
+# vercel
+.vercel
 
 # env (segredos — nunca comitar)
 .env
