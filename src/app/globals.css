@@ -3,9 +3,10 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
+/* Base alinhada aos tokens do design system (bg-slate-50 / text-slate-950). */
 body {
-  @apply bg-slate-950 text-slate-100 antialiased;
+  @apply bg-slate-50 text-slate-950 antialiased;
 }

@@ -1,4 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
+import { PageShell } from "@/components/ui/PageShell";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import type { BadgeVariant } from "@/design-system/variants";
 
 export const dynamic = "force-dynamic";
 
@@ -11,8 +16,6 @@ async function checkSchema(): Promise<{ state: SchemaState; detail: string }> {
 
   try {
     const supabase = await createClient();
-    // `roles` is reference data; if the query errors with a missing-relation
-    // code, the migrations haven't been applied yet.
     const { error } = await supabase.from("roles").select("key").limit(1);
 
     if (!error) return { state: "ready", detail: "Tabelas encontradas." };
@@ -25,39 +28,43 @@ async function checkSchema(): Promise<{ state: SchemaState; detail: string }> {
   }
 }
 
-const BADGE: Record<SchemaState, { label: string; cls: string }> = {
-  ready: { label: "✅ Banco conectado e migrado", cls: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" },
-  missing: { label: "🟡 Conectado — falta rodar as migrations", cls: "bg-amber-500/15 text-amber-300 border-amber-500/30" },
-  unconfigured: { label: "⚪ Supabase não configurado", cls: "bg-slate-500/15 text-slate-300 border-slate-500/30" },
-  error: { label: "🔴 Erro ao conectar", cls: "bg-rose-500/15 text-rose-300 border-rose-500/30" },
+const STATUS: Record<SchemaState, { label: string; variant: BadgeVariant }> = {
+  ready: { label: "Banco conectado e migrado", variant: "success" },
+  missing: { label: "Conectado — falta rodar as migrations", variant: "warning" },
+  unconfigured: { label: "Supabase não configurado", variant: "neutral" },
+  error: { label: "Erro ao conectar", variant: "danger" },
 };
 
 export default async function Home() {
   const { state, detail } = await checkSchema();
-  const badge = BADGE[state];
+  const status = STATUS[state];
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center gap-6 px-6 py-16">
-      <header className="space-y-2">
-        <p className="text-sm font-medium uppercase tracking-widest text-brand">Jogos CSCJ</p>
-        <h1 className="text-3xl font-bold sm:text-4xl">
-          Plataforma de jogos <span className="text-brand">educativos e culturais</span>
-        </h1>
-        <p className="text-slate-400">
-          Base SaaS multi-tenant — escolas, museus, empresas e projetos culturais.
-        </p>
-      </header>
+    <PageShell>
+      <PageHeader
+        title="Jogos CSCJ"
+        description="Plataforma SaaS de jogos educativos e culturais — escolas, museus, empresas e projetos culturais."
+        action={<Badge variant={status.variant}>{status.label}</Badge>}
+      />
 
-      <div className={`rounded-xl border p-4 ${badge.cls}`}>
-        <p className="font-semibold">{badge.label}</p>
-        <p className="mt-1 text-sm opacity-80">{detail}</p>
+      <div className="grid gap-6 sm:grid-cols-2">
+        <Card>
+          <h3 className="text-base font-semibold text-slate-950">Status do banco</h3>
+          <p className="mt-1 text-sm text-slate-600">{detail}</p>
+          <div className="mt-4">
+            <Badge variant={status.variant}>{status.label}</Badge>
+          </div>
+        </Card>
+
+        <Card>
+          <h3 className="text-base font-semibold text-slate-950">Próximos passos</h3>
+          <ol className="mt-2 space-y-2 text-sm text-slate-600">
+            <li>1. Rodar <code className="text-blue-700">supabase/aplicar_tudo.sql</code> no SQL Editor.</li>
+            <li>2. Autenticação + telas (perfil, organização, equipe).</li>
+            <li>3. Módulo de jogos, turmas e resultados.</li>
+          </ol>
+        </Card>
       </div>
-
-      <ol className="space-y-2 text-sm text-slate-400">
-        <li>1. Rodar <code className="text-brand">supabase/aplicar_tudo.sql</code> no SQL Editor.</li>
-        <li>2. Construir auth + telas (perfil, organização, equipe).</li>
-        <li>3. Módulo de jogos, turmas e resultados.</li>
-      </ol>
-    </main>
+    </PageShell>
   );
 }
