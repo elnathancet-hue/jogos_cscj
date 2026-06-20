@@ -17,9 +17,17 @@ import { GameShare } from "@/components/dashboard/GameShare";
 import { QuizEditor } from "@/components/dashboard/QuizEditor";
 import { MemoryEditor } from "@/components/dashboard/MemoryEditor";
 import { CrosswordEditor } from "@/components/dashboard/CrosswordEditor";
+import { TrueFalseEditor } from "@/components/dashboard/TrueFalseEditor";
+import { OrderingEditor } from "@/components/dashboard/OrderingEditor";
+import { WordsearchEditor } from "@/components/dashboard/WordsearchEditor";
+import { HotspotEditor } from "@/components/dashboard/HotspotEditor";
 import { readQuizQuestions } from "@/lib/games/quiz";
 import { readMemoryPairs } from "@/lib/games/memory";
 import { readCrosswordEntries } from "@/lib/games/crossword";
+import { readTrueFalse } from "@/lib/games/truefalse";
+import { readOrdering } from "@/lib/games/ordering";
+import { readWordsearchWords } from "@/lib/games/wordsearch";
+import { readHotspot } from "@/lib/games/hotspot";
 import { getGameType, GAME_TYPE_LABELS } from "@/lib/games/types";
 import type { BadgeVariant } from "@/design-system/variants";
 
@@ -174,10 +182,30 @@ export default async function GamePage({
               <CardTitle>Conteúdo do jogo — {GAME_TYPE_LABELS[gameType]}</CardTitle>
             </CardHeader>
             {gameType === "quiz" && (
-              <QuizEditor gameId={game.id} initialQuestions={readQuizQuestions(game.settings)} />
+              <QuizEditor
+                gameId={game.id}
+                initialQuestions={readQuizQuestions(game.settings)}
+                initialTimed={(game.settings as { timed?: boolean })?.timed}
+              />
+            )}
+            {gameType === "truefalse" && (
+              <TrueFalseEditor gameId={game.id} initial={readTrueFalse(game.settings)} />
             )}
             {gameType === "memory" && (
               <MemoryEditor gameId={game.id} initialPairs={readMemoryPairs(game.settings)} />
+            )}
+            {gameType === "ordering" && (() => {
+              const o = readOrdering(game.settings);
+              return (
+                <OrderingEditor
+                  gameId={game.id}
+                  initialPrompt={o?.prompt ?? ""}
+                  initialItems={o?.items ?? []}
+                />
+              );
+            })()}
+            {gameType === "wordsearch" && (
+              <WordsearchEditor gameId={game.id} initialWords={readWordsearchWords(game.settings)} />
             )}
             {gameType === "crossword" && (
               <CrosswordEditor
@@ -185,6 +213,16 @@ export default async function GamePage({
                 initialEntries={readCrosswordEntries(game.settings)}
               />
             )}
+            {gameType === "hotspot" && (() => {
+              const hs = readHotspot(game.settings);
+              return (
+                <HotspotEditor
+                  gameId={game.id}
+                  initialImageUrl={hs?.imageUrl ?? ""}
+                  initialTargets={hs?.targets ?? []}
+                />
+              );
+            })()}
           </Card>
         );
       })()}

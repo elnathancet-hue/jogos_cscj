@@ -9,15 +9,16 @@ type ImageUploadProps = {
   name: string; // nome do campo escondido que carrega a URL final
   defaultUrl?: string;
   pathPrefix?: string; // pasta lógica dentro do bucket
+  onChange?: (url: string) => void;
 };
 
 const BUCKET = "media";
 
-export function ImageUpload({ name, defaultUrl = "", pathPrefix = "uploads" }: ImageUploadProps) {
+export function ImageUpload({ name, defaultUrl = "", pathPrefix = "uploads", onChange }: ImageUploadProps) {
   const [url, setUrl] = useState(defaultUrl);
   const [status, setStatus] = useState<"idle" | "uploading" | "error">("idle");
 
-  async function onChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -37,6 +38,7 @@ export function ImageUpload({ name, defaultUrl = "", pathPrefix = "uploads" }: I
 
     const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
     setUrl(data.publicUrl);
+    onChange?.(data.publicUrl);
     setStatus("idle");
   }
 
@@ -65,7 +67,7 @@ export function ImageUpload({ name, defaultUrl = "", pathPrefix = "uploads" }: I
           )}
         >
           {status === "uploading" ? "Enviando..." : "Escolher imagem"}
-          <input type="file" accept="image/*" onChange={onChange} className="hidden" />
+          <input type="file" accept="image/*" onChange={handleFile} className="hidden" />
         </label>
       </div>
 

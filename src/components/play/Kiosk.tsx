@@ -4,14 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
 
-import { getGameType } from "@/lib/games/types";
-import { readQuizQuestions } from "@/lib/games/quiz";
-import { readMemoryPairs } from "@/lib/games/memory";
-import { readCrosswordEntries } from "@/lib/games/crossword";
 import { initSound, playClick } from "@/lib/play/sound";
-import { QuizPlay } from "@/components/play/QuizPlay";
-import { MemoryPlay } from "@/components/play/MemoryPlay";
-import { CrosswordPlay } from "@/components/play/CrosswordPlay";
+import { renderGamePlayer, isWideType } from "@/components/play/render-player";
 import { SoundToggle } from "@/components/play/SoundToggle";
 import { LiveRanking } from "@/components/play/LiveRanking";
 
@@ -38,8 +32,7 @@ export function Kiosk({ games, origin }: { games: KioskGame[]; origin: string })
 
   const game = games[index];
   const accent = game.primaryColor || "#7c3aed";
-  const type = getGameType(game.settings);
-  const wide = type === "crossword";
+  const wide = isWideType(game.settings);
   const isPlaylist = games.length > 1;
   const playUrl = `${origin}/play/${game.id}`;
 
@@ -85,20 +78,10 @@ export function Kiosk({ games, origin }: { games: KioskGame[]; origin: string })
   }
 
   function renderPlayer() {
-    const common = { autoStart: true, playerName: "Visitante", onFinish: handleFinish };
-    if (type === "quiz") {
-      const q = readQuizQuestions(game.settings);
-      if (q.length) return <QuizPlay gameId={game.id} questions={q} {...common} />;
-    }
-    if (type === "memory") {
-      const p = readMemoryPairs(game.settings);
-      if (p.length) return <MemoryPlay gameId={game.id} pairs={p} {...common} />;
-    }
-    if (type === "crossword") {
-      const e = readCrosswordEntries(game.settings);
-      if (e.length) return <CrosswordPlay gameId={game.id} entries={e} {...common} />;
-    }
-    return <p className="py-8 text-center text-slate-500">Este jogo ainda não tem conteúdo.</p>;
+    return renderGamePlayer(
+      { id: game.id, settings: game.settings },
+      { autoStart: true, playerName: "Visitante", onFinish: handleFinish },
+    );
   }
 
   return (

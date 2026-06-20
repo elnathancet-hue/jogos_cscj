@@ -8,21 +8,25 @@ import type { QuizQuestion } from "@/lib/games/quiz";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { ImageUpload } from "@/components/ui/ImageUpload";
 
 function newQuestion(): QuizQuestion {
-  return { id: crypto.randomUUID(), prompt: "", options: ["", ""], answerIndex: 0 };
+  return { id: crypto.randomUUID(), prompt: "", options: ["", ""], answerIndex: 0, imageUrl: "", explanation: "" };
 }
 
 export function QuizEditor({
   gameId,
   initialQuestions,
+  initialTimed,
 }: {
   gameId: string;
   initialQuestions: QuizQuestion[];
+  initialTimed?: boolean;
 }) {
   const [questions, setQuestions] = useState<QuizQuestion[]>(
     initialQuestions.length ? initialQuestions : [newQuestion()],
   );
+  const [timed, setTimed] = useState(!!initialTimed);
   const [state, action, pending] = useActionState(
     updateGameContentAction,
     EMPTY_FORM_STATE,
@@ -32,7 +36,7 @@ export function QuizEditor({
     setQuestions((qs) => qs.map((q) => (q.id === id ? fn(q) : q)));
   }
 
-  const settingsJson = JSON.stringify({ type: "quiz", questions });
+  const settingsJson = JSON.stringify({ type: "quiz", timed, questions });
 
   return (
     <form action={action} className="space-y-5">
@@ -49,6 +53,11 @@ export function QuizEditor({
           {state.error}
         </p>
       )}
+
+      <label className="flex items-center gap-2 text-sm text-slate-700">
+        <input type="checkbox" checked={timed} onChange={(e) => setTimed(e.target.checked)} />
+        Modo contra o tempo (cada pergunta tem 20s; respostas rápidas valem mais)
+      </label>
 
       {questions.map((q, qi) => (
         <div key={q.id} className="rounded-lg border border-slate-200 p-4">
@@ -129,6 +138,26 @@ export function QuizEditor({
               + Adicionar opção
             </Button>
           )}
+
+          <div className="mt-3">
+            <Field label="Explicação (mostrada após responder)" hint="Opcional — o porquê da resposta.">
+              <Input
+                value={q.explanation ?? ""}
+                onChange={(e) => patch(q.id, (x) => ({ ...x, explanation: e.target.value }))}
+              />
+            </Field>
+          </div>
+
+          <div className="mt-3">
+            <Field label="Imagem da pergunta" hint="Opcional.">
+              <ImageUpload
+                name={`__qimg_${q.id}`}
+                defaultUrl={q.imageUrl ?? ""}
+                pathPrefix="quiz"
+                onChange={(url) => patch(q.id, (x) => ({ ...x, imageUrl: url }))}
+              />
+            </Field>
+          </div>
         </div>
       ))}
 

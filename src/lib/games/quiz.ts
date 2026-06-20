@@ -11,6 +11,8 @@ export const quizQuestionSchema = z
     prompt: z.string().min(1, "Pergunta sem enunciado."),
     options: z.array(z.string().min(1, "Opção vazia.")).min(2, "Mínimo de 2 opções.").max(6),
     answerIndex: z.number().int().min(0),
+    imageUrl: z.string().url().max(1000).optional().or(z.literal("")),
+    explanation: z.string().max(500).optional().or(z.literal("")),
   })
   .refine((q) => q.answerIndex < q.options.length, {
     message: "Marque qual opção é a correta.",
@@ -18,8 +20,12 @@ export const quizQuestionSchema = z
 
 export const quizSettingsSchema = z.object({
   type: z.literal("quiz"),
+  timed: z.boolean().optional(),
   questions: z.array(quizQuestionSchema).min(1, "Adicione ao menos uma pergunta."),
 });
+
+/** Segundos por pergunta no modo contra o tempo. */
+export const QUIZ_TIME_LIMIT = 20;
 
 export type QuizQuestion = z.infer<typeof quizQuestionSchema>;
 export type QuizSettings = z.infer<typeof quizSettingsSchema>;
