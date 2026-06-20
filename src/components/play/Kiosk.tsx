@@ -13,6 +13,7 @@ import { QuizPlay } from "@/components/play/QuizPlay";
 import { MemoryPlay } from "@/components/play/MemoryPlay";
 import { CrosswordPlay } from "@/components/play/CrosswordPlay";
 import { SoundToggle } from "@/components/play/SoundToggle";
+import { LiveRanking } from "@/components/play/LiveRanking";
 
 export type KioskGame = {
   id: string;
@@ -26,41 +27,57 @@ export type KioskGame = {
 };
 
 const RETURN_SECONDS = 12;
+const IDLE_ADVANCE_MS = 22000;
 
-export function Kiosk({ game, playUrl }: { game: KioskGame; playUrl: string }) {
-  const accent = game.primaryColor || "#7c3aed";
-  const type = getGameType(game.settings);
-  const wide = type === "crossword";
-
+export function Kiosk({ games, origin }: { games: KioskGame[]; origin: string }) {
+  const [index, setIndex] = useState(0);
   const [phase, setPhase] = useState<"attract" | "playing">("attract");
   const [round, setRound] = useState(0);
   const [returning, setReturning] = useState(false);
   const [secs, setSecs] = useState(RETURN_SECONDS);
 
-  // countdown para voltar à atração depois do resultado
+  const game = games[index];
+  const accent = game.primaryColor || "#7c3aed";
+  const type = getGameType(game.settings);
+  const wide = type === "crossword";
+  const isPlaylist = games.length > 1;
+  const playUrl = `${origin}/play/${game.id}`;
+
+  const advance = useCallback(() => {
+    setIndex((i) => (i + 1) % games.length);
+    setRound((r) => r + 1);
+  }, [games.length]);
+
+  // countdown para voltar à atração (e avançar pro próximo jogo) após o resultado
   useEffect(() => {
     if (!returning) return;
     if (secs <= 0) {
       setReturning(false);
       setPhase("attract");
-      setRound((r) => r + 1);
+      advance();
       return;
     }
     const t = setTimeout(() => setSecs((s) => s - 1), 1000);
     return () => clearTimeout(t);
-  }, [returning, secs]);
+  }, [returning, secs, advance]);
+
+  // troca automática de jogo quando ninguém joga (carrossel)
+  useEffect(() => {
+    if (phase !== "attract" || !isPlaylist) return;
+    const t = setTimeout(advance, IDLE_ADVANCE_MS);
+    return () => clearTimeout(t);
+  }, [phase, index, isPlaylist, advance]);
+
+  const handleFinish = useCallback(() => {
+    setSecs(RETURN_SECONDS);
+    setReturning(true);
+  }, []);
 
   function start() {
     initSound();
     playClick();
     setPhase("playing");
   }
-
-  // estável: senão o efeito de onFinish no player redispara a cada tick.
-  const handleFinish = useCallback(() => {
-    setSecs(RETURN_SECONDS);
-    setReturning(true);
-  }, []);
 
   function goFullscreen() {
     const el = document.documentElement;
@@ -81,9 +98,7 @@ export function Kiosk({ game, playUrl }: { game: KioskGame; playUrl: string }) {
       const e = readCrosswordEntries(game.settings);
       if (e.length) return <CrosswordPlay gameId={game.id} entries={e} {...common} />;
     }
-    return (
-      <p className="py-8 text-center text-slate-500">Este jogo ainda não tem conteúdo.</p>
-    );
+    return <p className="py-8 text-center text-slate-500">Este jogo ainda não tem conteúdo.</p>;
   }
 
   return (
@@ -110,7 +125,7 @@ export function Kiosk({ game, playUrl }: { game: KioskGame; playUrl: string }) {
         <button
           type="button"
           onClick={start}
-          className="relative flex min-h-screen w-full cursor-pointer flex-col items-center justify-center gap-8 px-6 text-center text-white"
+          className="relative flex min-h-screen w-full cursor-pointer flex-col items-center justify-center gap-8 px-6 py-16 text-center text-white"
         >
           {(game.orgName || game.logoUrl) && (
             <div className="flex items-center gap-2">
@@ -126,37 +141,57 @@ export function Kiosk({ game, playUrl }: { game: KioskGame; playUrl: string }) {
             </div>
           )}
 
-          {game.coverImageUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={game.coverImageUrl}
-              alt=""
-              className="max-h-56 w-auto rounded-2xl border-4 border-white/20 object-cover shadow-2xl"
-            />
-          )}
+          <div className="flex flex-col items-center gap-8 lg:flex-row lg:items-center lg:gap-12">
+            <div className="flex flex-col items-center gap-5">
+              {game.coverImageUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={game.coverImageUrl}
+                  alt=""
+                  className="max-h-48 w-auto rounded-2xl border-4 border-white/20 object-cover shadow-2xl"
+                />
+              )}
+              <div className="space-y-2">
+                <h1 className="font-display text-5xl font-bold drop-shadow sm:text-6xl">
+                  {game.title}
+                </h1>
+                {game.description && (
+                  <p className="mx-auto max-w-xl text-lg text-white/90">{game.description}</p>
+                )}
+              </div>
 
-          <div className="space-y-2">
-            <h1 className="font-display text-5xl font-bold drop-shadow sm:text-6xl">{game.title}</h1>
-            {game.description && (
-              <p className="mx-auto max-w-xl text-lg text-white/90">{game.description}</p>
-            )}
-          </div>
+              <motion.div
+                animate={{ scale: [1, 1.06, 1] }}
+                transition={{ duration: 1.4, repeat: Infinity }}
+                className="rounded-full bg-white px-10 py-4 font-display text-2xl font-bold shadow-xl"
+                style={{ color: accent }}
+              >
+                ▶ Toque para jogar
+              </motion.div>
 
-          <motion.div
-            animate={{ scale: [1, 1.06, 1] }}
-            transition={{ duration: 1.4, repeat: Infinity }}
-            className="rounded-full bg-white px-10 py-4 font-display text-2xl font-bold text-slate-900 shadow-xl"
-            style={{ color: accent }}
-          >
-            ▶ Toque para jogar
-          </motion.div>
-
-          <div className="flex flex-col items-center gap-2">
-            <div className="rounded-2xl bg-white p-3 shadow-lg">
-              <QRCodeSVG value={playUrl} size={120} />
+              <div className="flex flex-col items-center gap-2">
+                <div className="rounded-2xl bg-white p-3 shadow-lg">
+                  <QRCodeSVG value={playUrl} size={104} />
+                </div>
+                <p className="text-sm text-white/80">ou aponte a câmera do celular</p>
+              </div>
             </div>
-            <p className="text-sm text-white/80">ou aponte a câmera do celular</p>
+
+            <LiveRanking gameId={game.id} />
           </div>
+
+          {isPlaylist && (
+            <div className="flex items-center gap-2">
+              {games.map((g, i) => (
+                <span
+                  key={g.id}
+                  className={`h-2 rounded-full transition-all ${
+                    i === index ? "w-6 bg-white" : "w-2 bg-white/40"
+                  }`}
+                />
+              ))}
+            </div>
+          )}
         </button>
       ) : (
         <div className="relative flex min-h-screen items-start justify-center px-4 py-10">
@@ -180,17 +215,19 @@ export function Kiosk({ game, playUrl }: { game: KioskGame; playUrl: string }) {
 
           {returning && (
             <div className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-center gap-4 bg-slate-900/90 px-4 py-3 text-white">
-              <span className="text-sm">Próximo jogador em {secs}s…</span>
+              <span className="text-sm">
+                {isPlaylist ? "Próximo jogo" : "Próximo jogador"} em {secs}s…
+              </span>
               <button
                 type="button"
                 onClick={() => {
                   setReturning(false);
                   setPhase("attract");
-                  setRound((r) => r + 1);
+                  advance();
                 }}
                 className="rounded-full bg-white px-4 py-1.5 text-sm font-bold text-slate-900"
               >
-                Jogar de novo
+                {isPlaylist ? "Pular" : "Jogar de novo"}
               </button>
             </div>
           )}

@@ -51,6 +51,7 @@ export default async function GamesPage() {
     description: string | null;
     status: GameStatus;
   }[];
+  const hasPublished = list.some((g) => g.status === "published");
 
   return (
     <>
@@ -58,14 +59,25 @@ export default async function GamesPage() {
         title="Jogos"
         description={`Jogos de ${active.org.name}.`}
         action={
-          canCreate ? (
-            <Link
-              href="/dashboard/games/new"
-              className="inline-flex h-10 items-center justify-center rounded-lg border border-blue-600 bg-blue-600 px-4 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-            >
-              Novo jogo
-            </Link>
-          ) : undefined
+          <div className="flex items-center gap-3">
+            {hasPublished && (
+              <Link
+                href={`/kiosk/org/${active.org.id}`}
+                target="_blank"
+                className="text-sm font-medium text-blue-700 hover:underline"
+              >
+                Modo TV (todos) ↗
+              </Link>
+            )}
+            {canCreate && (
+              <Link
+                href="/dashboard/games/new"
+                className="inline-flex h-10 items-center justify-center rounded-lg border border-blue-600 bg-blue-600 px-4 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+              >
+                Novo jogo
+              </Link>
+            )}
+          </div>
         }
       />
 

@@ -95,3 +95,38 @@ comment on function public.submit_game_result(uuid, text, integer, integer, text
 grant execute on function public.get_public_game(uuid) to anon, authenticated;
 grant execute on function public.submit_game_result(uuid, text, integer, integer, text)
   to anon, authenticated;
+
+-- ---------------------------------------------------------------------------
+-- get_org_public_games(org_id): todos os jogos PUBLICADOS de uma organização,
+-- para o modo TV em playlist (anon pode ler).
+-- ---------------------------------------------------------------------------
+create or replace function public.get_org_public_games(p_org_id uuid)
+returns table (
+  id uuid,
+  title text,
+  description text,
+  organization_id uuid,
+  settings jsonb,
+  cover_image_url text,
+  org_name text,
+  primary_color text,
+  logo_url text
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select
+    g.id, g.title, g.description, g.organization_id, g.settings,
+    g.cover_image_url, o.name as org_name, o.primary_color, o.logo_url
+  from public.games g
+  join public.organizations o on o.id = g.organization_id
+  where g.organization_id = p_org_id and g.status = 'published'
+  order by g.created_at desc;
+$$;
+
+comment on function public.get_org_public_games(uuid) is
+  'Jogos publicados de uma organização (para o Modo TV em playlist).';
+
+grant execute on function public.get_org_public_games(uuid) to anon, authenticated;
