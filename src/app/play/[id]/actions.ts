@@ -3,7 +3,16 @@
 import { z } from "zod";
 
 import { createClient } from "@/lib/supabase/server";
-import type { FormState } from "@/lib/forms";
+
+export type LeaderboardRow = { player_name: string; score: number };
+
+export type PlayResultState = {
+  error?: string;
+  message?: string;
+  rank?: number;
+  total?: number;
+  leaderboard?: LeaderboardRow[];
+};
 
 const submitSchema = z.object({
   gameId: z.string().uuid(),
@@ -13,11 +22,11 @@ const submitSchema = z.object({
   startedAt: z.coerce.number().optional(),
 });
 
-/** Registra uma sessão de jogo (jogador anônimo) via RPC pública. */
+/** Registra a sessão (RPC pública) e devolve posição + ranking do jogo. */
 export async function submitResultAction(
-  _prev: FormState,
+  _prev: PlayResultState,
   formData: FormData,
-): Promise<FormState> {
+): Promise<PlayResultState> {
   const parsed = submitSchema.safeParse({
     gameId: formData.get("gameId"),
     playerName: formData.get("playerName"),
@@ -35,7 +44,7 @@ export async function submitResultAction(
       : null;
 
   const supabase = await createClient();
-  const { error } = await supabase.rpc("submit_game_result", {
+  const { data: resultId, error } = await supabase.rpc("submit_game_result", {
     p_game_id: parsed.data.gameId,
     p_player_name: parsed.data.playerName,
     p_score: parsed.data.score ?? 0,
@@ -45,5 +54,17 @@ export async function submitResultAction(
 
   if (error) return { error: error.message || "Não foi possível registrar." };
 
-  return { message: "Resultado registrado. Obrigado por jogar!" };
+  const [{ data: rankRows }, { data: lb }] = await Promise.all([
+    supabase.rpc("get_result_rank", { p_result_id: resultId }),
+    supabase.rpc("get_game_leaderboard", { p_game_id: parsed.data.gameId, p_limit: 5 }),
+  ]);
+
+  const rank = Array.isArray(rankRows) ? rankRows[0] : undefined;
+
+  return {
+    message: "Resultado registrado!",
+    rank: rank?.rank,
+    total: rank?.total,
+    leaderboard: (lb as LeaderboardRow[]) ?? [],
+  };
 }

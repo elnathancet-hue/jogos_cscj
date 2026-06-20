@@ -2,8 +2,7 @@
 
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 
-import { submitResultAction } from "@/app/play/[id]/actions";
-import { EMPTY_FORM_STATE } from "@/lib/forms";
+import { submitResultAction, type PlayResultState } from "@/app/play/[id]/actions";
 import {
   buildCrossword,
   scoreCrossword,
@@ -40,7 +39,7 @@ export function CrosswordPlay({
   const [filled, setFilled] = useState<Record<string, string>>({});
   const [active, setActive] = useState<{ r: number; c: number } | null>(null);
   const [dir, setDir] = useState<Dir>("across");
-  const [state, action, pending] = useActionState(submitResultAction, EMPTY_FORM_STATE);
+  const [state, action, pending] = useActionState(submitResultAction, {} as PlayResultState);
 
   const inputs = useRef<Record<string, HTMLInputElement | null>>({});
 
@@ -134,7 +133,15 @@ export function CrosswordPlay({
   }
 
   if (state.message) {
-    return <ResultScreen score={score} detail={`${correct} de ${total} palavras`} />;
+    return (
+      <ResultScreen
+        score={score}
+        detail={`${correct} de ${total} palavras`}
+        rank={state.rank}
+        total={state.total}
+        leaderboard={state.leaderboard}
+      />
+    );
   }
 
   if (!started) {

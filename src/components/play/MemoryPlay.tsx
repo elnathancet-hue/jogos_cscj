@@ -3,9 +3,9 @@
 import { useActionState, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 
-import { submitResultAction } from "@/app/play/[id]/actions";
-import { EMPTY_FORM_STATE } from "@/lib/forms";
+import { submitResultAction, type PlayResultState } from "@/app/play/[id]/actions";
 import { scoreMemory, type MemoryPair } from "@/lib/games/memory";
+import { playFlip, playCorrect, playWrong } from "@/lib/play/sound";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { PlayIntro } from "@/components/play/PlayIntro";
@@ -43,7 +43,7 @@ export function MemoryPlay({ gameId, pairs }: { gameId: string; pairs: MemoryPai
   const [wrong, setWrong] = useState<string[]>([]);
   const [attempts, setAttempts] = useState(0);
 
-  const [state, action, pending] = useActionState(submitResultAction, EMPTY_FORM_STATE);
+  const [state, action, pending] = useActionState(submitResultAction, {} as PlayResultState);
 
   useEffect(() => {
     if (flipped.length !== 2) return;
@@ -52,12 +52,14 @@ export function MemoryPlay({ gameId, pairs }: { gameId: string; pairs: MemoryPai
     const c1 = deck.find((c) => c.key === k1)!;
     const c2 = deck.find((c) => c.key === k2)!;
     if (c1.pairId === c2.pairId) {
+      playCorrect();
       const t = setTimeout(() => {
         setMatched((m) => [...m, c1.pairId]);
         setFlipped([]);
       }, 350);
       return () => clearTimeout(t);
     }
+    playWrong();
     setWrong([k1, k2]);
     const t = setTimeout(() => {
       setWrong([]);
@@ -70,7 +72,15 @@ export function MemoryPlay({ gameId, pairs }: { gameId: string; pairs: MemoryPai
   const score = scoreMemory(pairs.length, attempts);
 
   if (state.message) {
-    return <ResultScreen score={score} detail={`${attempts} tentativas`} />;
+    return (
+      <ResultScreen
+        score={score}
+        detail={`${attempts} tentativas`}
+        rank={state.rank}
+        total={state.total}
+        leaderboard={state.leaderboard}
+      />
+    );
   }
 
   if (!started) {
@@ -105,7 +115,13 @@ export function MemoryPlay({ gameId, pairs }: { gameId: string; pairs: MemoryPai
               key={c.key}
               type="button"
               disabled={isUp || flipped.length === 2}
-              onClick={() => setFlipped((f) => (f.length < 2 ? [...f, c.key] : f))}
+              onClick={() =>
+                setFlipped((f) => {
+                  if (f.length >= 2) return f;
+                  playFlip();
+                  return [...f, c.key];
+                })
+              }
               className={cn("relative h-20 w-full", isWrong && "animate-shake")}
             >
               <motion.div

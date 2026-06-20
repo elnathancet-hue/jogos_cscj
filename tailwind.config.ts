@@ -13,6 +13,10 @@ const config: Config = {
           dark: "#0f172a",
         },
       },
+      fontFamily: {
+        // fonte arredondada/divertida usada na experiência de jogar (/play)
+        display: ["var(--font-fredoka)", "system-ui", "sans-serif"],
+      },
       keyframes: {
         shake: {
           "0%, 100%": { transform: "translateX(0)" },

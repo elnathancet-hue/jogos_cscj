@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { initSound, playClick } from "@/lib/play/sound";
 
 export function PlayIntro({
   onStart,
@@ -44,7 +45,11 @@ export function PlayIntro({
         type="button"
         className="w-full"
         disabled={name.trim().length === 0}
-        onClick={() => onStart(name.trim(), classCode.trim())}
+        onClick={() => {
+          initSound(); // destrava o áudio (gesto do usuário)
+          playClick();
+          onStart(name.trim(), classCode.trim());
+        }}
       >
         {cta}
       </Button>
