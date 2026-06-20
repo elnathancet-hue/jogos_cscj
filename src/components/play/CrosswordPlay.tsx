@@ -27,21 +27,31 @@ function cellsOf(w: PlacedWord) {
 export function CrosswordPlay({
   gameId,
   entries,
+  autoStart,
+  playerName,
+  onFinish,
 }: {
   gameId: string;
   entries: CrosswordEntry[];
+  autoStart?: boolean;
+  playerName?: string;
+  onFinish?: () => void;
 }) {
   const [layout] = useState(() => buildCrossword(entries));
-  const [started, setStarted] = useState(false);
-  const [name, setName] = useState("");
+  const [started, setStarted] = useState(!!autoStart);
+  const [name, setName] = useState(playerName ?? "");
   const [classCode, setClassCode] = useState("");
-  const [startedAt, setStartedAt] = useState(0);
+  const [startedAt, setStartedAt] = useState(() => (autoStart ? Date.now() : 0));
   const [filled, setFilled] = useState<Record<string, string>>({});
   const [active, setActive] = useState<{ r: number; c: number } | null>(null);
   const [dir, setDir] = useState<Dir>("across");
   const [state, action, pending] = useActionState(submitResultAction, {} as PlayResultState);
 
   const inputs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  useEffect(() => {
+    if (state.message) onFinish?.();
+  }, [state.message, onFinish]);
 
   // mapa: célula -> palavras que passam por ela (por direção)
   const cellWords = useMemo(() => {

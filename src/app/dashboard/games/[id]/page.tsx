@@ -13,6 +13,7 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { GameForm } from "@/components/dashboard/GameForm";
 import { GameStatusActions } from "@/components/dashboard/GameStatusActions";
+import { GameShare } from "@/components/dashboard/GameShare";
 import { QuizEditor } from "@/components/dashboard/QuizEditor";
 import { MemoryEditor } from "@/components/dashboard/MemoryEditor";
 import { CrosswordEditor } from "@/components/dashboard/CrosswordEditor";
@@ -153,6 +154,15 @@ export default async function GamePage({
               )}
             </div>
           </Card>
+
+          {status === "published" && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Expor o jogo (Modo TV)</CardTitle>
+              </CardHeader>
+              <GameShare gameId={game.id} />
+            </Card>
+          )}
         </div>
       </div>
 

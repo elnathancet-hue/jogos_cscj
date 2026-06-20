@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { submitResultAction, type PlayResultState } from "@/app/play/[id]/actions";
@@ -17,20 +17,30 @@ const INITIAL: PlayResultState = {};
 export function QuizPlay({
   gameId,
   questions,
+  autoStart,
+  playerName,
+  onFinish,
 }: {
   gameId: string;
   questions: QuizQuestion[];
+  autoStart?: boolean;
+  playerName?: string;
+  onFinish?: () => void;
 }) {
-  const [started, setStarted] = useState(false);
-  const [name, setName] = useState("");
+  const [started, setStarted] = useState(!!autoStart);
+  const [name, setName] = useState(playerName ?? "");
   const [classCode, setClassCode] = useState("");
-  const [startedAt, setStartedAt] = useState(0);
+  const [startedAt, setStartedAt] = useState(() => (autoStart ? Date.now() : 0));
   const [index, setIndex] = useState(0);
   const [streak, setStreak] = useState(0);
   const [answers, setAnswers] = useState<(number | undefined)[]>(
     () => Array(questions.length).fill(undefined),
   );
   const [state, action, pending] = useActionState(submitResultAction, INITIAL);
+
+  useEffect(() => {
+    if (state.message) onFinish?.();
+  }, [state.message, onFinish]);
 
   const { correct, total, score } = scoreQuiz(questions, answers);
 

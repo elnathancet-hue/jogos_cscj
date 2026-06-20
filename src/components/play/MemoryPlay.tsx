@@ -31,11 +31,23 @@ const HIDDEN_FACE: React.CSSProperties = {
   WebkitBackfaceVisibility: "hidden",
 };
 
-export function MemoryPlay({ gameId, pairs }: { gameId: string; pairs: MemoryPair[] }) {
-  const [started, setStarted] = useState(false);
-  const [name, setName] = useState("");
+export function MemoryPlay({
+  gameId,
+  pairs,
+  autoStart,
+  playerName,
+  onFinish,
+}: {
+  gameId: string;
+  pairs: MemoryPair[];
+  autoStart?: boolean;
+  playerName?: string;
+  onFinish?: () => void;
+}) {
+  const [started, setStarted] = useState(!!autoStart);
+  const [name, setName] = useState(playerName ?? "");
   const [classCode, setClassCode] = useState("");
-  const [startedAt, setStartedAt] = useState(0);
+  const [startedAt, setStartedAt] = useState(() => (autoStart ? Date.now() : 0));
 
   const [deck] = useState<Card[]>(() => buildDeck(pairs));
   const [flipped, setFlipped] = useState<string[]>([]);
@@ -44,6 +56,10 @@ export function MemoryPlay({ gameId, pairs }: { gameId: string; pairs: MemoryPai
   const [attempts, setAttempts] = useState(0);
 
   const [state, action, pending] = useActionState(submitResultAction, {} as PlayResultState);
+
+  useEffect(() => {
+    if (state.message) onFinish?.();
+  }, [state.message, onFinish]);
 
   useEffect(() => {
     if (flipped.length !== 2) return;

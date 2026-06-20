@@ -1,0 +1,73 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { QRCodeSVG } from "qrcode.react";
+
+import { Button } from "@/components/ui/Button";
+
+export function GameShare({ gameId }: { gameId: string }) {
+  const [origin, setOrigin] = useState("");
+  const [copied, setCopied] = useState<string | null>(null);
+
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
+
+  const playUrl = `${origin}/play/${gameId}`;
+  const kioskUrl = `${origin}/kiosk/${gameId}`;
+
+  async function copy(url: string, tag: string) {
+    await navigator.clipboard.writeText(url);
+    setCopied(tag);
+    setTimeout(() => setCopied((c) => (c === tag ? null : c)), 2000);
+  }
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-slate-600">
+        Exponha este jogo num evento ou museu: abra o <strong>Modo TV</strong> numa tela e as
+        pessoas tocam (ou escaneiam o QR) para jogar.
+      </p>
+
+      <div className="flex items-center gap-4">
+        <div className="rounded-lg border border-slate-200 bg-white p-2">
+          {origin ? <QRCodeSVG value={playUrl} size={96} /> : <div className="h-24 w-24" />}
+        </div>
+        <div className="space-y-2">
+          <a
+            href={kioskUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex h-10 items-center justify-center rounded-lg border border-blue-600 bg-blue-600 px-4 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+          >
+            Abrir Modo TV ↗
+          </a>
+          <p className="text-xs text-slate-500">O QR leva direto pra jogar no celular.</p>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <input
+            readOnly
+            value={playUrl}
+            className="h-9 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs text-slate-600"
+          />
+          <Button type="button" variant="secondary" size="sm" onClick={() => copy(playUrl, "play")}>
+            {copied === "play" ? "Copiado!" : "Copiar link"}
+          </Button>
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            readOnly
+            value={kioskUrl}
+            className="h-9 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs text-slate-600"
+          />
+          <Button type="button" variant="secondary" size="sm" onClick={() => copy(kioskUrl, "kiosk")}>
+            {copied === "kiosk" ? "Copiado!" : "Copiar Modo TV"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
