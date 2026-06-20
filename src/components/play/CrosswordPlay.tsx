@@ -10,9 +10,9 @@ import {
   type CrosswordEntry,
 } from "@/lib/games/crossword";
 import { cn } from "@/lib/utils";
-import { Field } from "@/components/ui/Field";
-import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { PlayIntro } from "@/components/play/PlayIntro";
+import { ResultScreen } from "@/components/play/ResultScreen";
 
 const key = (r: number, c: number) => `${r},${c}`;
 
@@ -24,7 +24,7 @@ export function CrosswordPlay({
   entries: CrosswordEntry[];
 }) {
   const [layout] = useState(() => buildCrossword(entries));
-  const [step, setStep] = useState<"intro" | "playing">("intro");
+  const [started, setStarted] = useState(false);
   const [name, setName] = useState("");
   const [classCode, setClassCode] = useState("");
   const [startedAt, setStartedAt] = useState(0);
@@ -33,46 +33,25 @@ export function CrosswordPlay({
 
   const { correct, total, score } = scoreCrossword(layout, filled);
 
-  // número exibido no canto da célula que inicia palavra
   const startNumber: Record<string, number> = {};
   for (const p of layout.placed) startNumber[key(p.row, p.col)] = p.number;
-
   const across = layout.placed.filter((p) => p.dir === "across").sort((a, b) => a.number - b.number);
   const down = layout.placed.filter((p) => p.dir === "down").sort((a, b) => a.number - b.number);
 
   if (state.message) {
-    return (
-      <div className="space-y-3 text-center">
-        <p className="text-sm text-slate-600">{state.message}</p>
-        <p className="text-3xl font-bold text-slate-950">
-          {correct}/{total}
-        </p>
-        <p className="text-sm text-slate-500">Pontuação: {score}/100</p>
-      </div>
-    );
+    return <ResultScreen score={score} detail={`${correct} de ${total} palavras`} />;
   }
 
-  if (step === "intro") {
+  if (!started) {
     return (
-      <div className="space-y-4">
-        <Field label="Seu nome ou apelido" htmlFor="playerName">
-          <Input id="playerName" value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" />
-        </Field>
-        <Field label="Código da turma" htmlFor="classCode" hint="Opcional.">
-          <Input id="classCode" value={classCode} onChange={(e) => setClassCode(e.target.value)} autoComplete="off" />
-        </Field>
-        <Button
-          type="button"
-          className="w-full"
-          disabled={name.trim().length === 0}
-          onClick={() => {
-            setStartedAt(Date.now());
-            setStep("playing");
-          }}
-        >
-          Começar
-        </Button>
-      </div>
+      <PlayIntro
+        onStart={(n, c) => {
+          setName(n);
+          setClassCode(c);
+          setStartedAt(Date.now());
+          setStarted(true);
+        }}
+      />
     );
   }
 
@@ -91,12 +70,14 @@ export function CrosswordPlay({
       <input type="hidden" name="score" value={score} />
 
       <div className="overflow-x-auto">
-        <div className="inline-grid gap-0.5" style={{ gridTemplateColumns: `repeat(${layout.cols}, 2rem)` }}>
+        <div
+          className="inline-grid gap-0.5"
+          style={{ gridTemplateColumns: `repeat(${layout.cols}, 2rem)` }}
+        >
           {Array.from({ length: layout.rows }).flatMap((_, r) =>
             Array.from({ length: layout.cols }).map((_, c) => {
               const cellKey = key(r, c);
-              const isCell = cellKey in layout.cells;
-              if (!isCell) return <div key={cellKey} className="h-8 w-8" />;
+              if (!(cellKey in layout.cells)) return <div key={cellKey} className="h-8 w-8" />;
               const num = startNumber[cellKey];
               return (
                 <div key={cellKey} className="relative h-8 w-8">
@@ -107,10 +88,9 @@ export function CrosswordPlay({
                   )}
                   <input
                     value={filled[cellKey] ?? ""}
-                    onChange={(e) => {
-                      const v = e.target.value.slice(-1).toUpperCase();
-                      setFilled((f) => ({ ...f, [cellKey]: v }));
-                    }}
+                    onChange={(e) =>
+                      setFilled((f) => ({ ...f, [cellKey]: e.target.value.slice(-1).toUpperCase() }))
+                    }
                     maxLength={1}
                     className={cn(
                       "h-8 w-8 rounded-sm border border-slate-300 text-center text-sm uppercase",

@@ -1,15 +1,15 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { motion } from "framer-motion";
 
 import { submitResultAction } from "@/app/play/[id]/actions";
 import { EMPTY_FORM_STATE } from "@/lib/forms";
 import { scoreQuiz, type QuizQuestion } from "@/lib/games/quiz";
-import { Field } from "@/components/ui/Field";
-import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-
-type Step = "intro" | "quiz";
+import { PlayIntro } from "@/components/play/PlayIntro";
+import { ResultScreen } from "@/components/play/ResultScreen";
+import { ProgressBar } from "@/components/play/ProgressBar";
 
 export function QuizPlay({
   gameId,
@@ -18,7 +18,7 @@ export function QuizPlay({
   gameId: string;
   questions: QuizQuestion[];
 }) {
-  const [step, setStep] = useState<Step>("intro");
+  const [started, setStarted] = useState(false);
   const [name, setName] = useState("");
   const [classCode, setClassCode] = useState("");
   const [startedAt, setStartedAt] = useState(0);
@@ -28,56 +28,23 @@ export function QuizPlay({
   const [state, action, pending] = useActionState(submitResultAction, EMPTY_FORM_STATE);
 
   const { correct, total, score } = scoreQuiz(questions, answers);
-  const allAnswered = answers.every((a) => a !== undefined);
+  const answered = answers.filter((a) => a !== undefined).length;
+  const allAnswered = answered === total;
 
-  // Tela final: resultado enviado.
   if (state.message) {
-    return (
-      <div className="space-y-3 text-center">
-        <p className="text-sm text-slate-600">{state.message}</p>
-        <p className="text-3xl font-bold text-slate-950">
-          {correct}/{total}
-        </p>
-        <p className="text-sm text-slate-500">Pontuação: {score}/100</p>
-      </div>
-    );
+    return <ResultScreen score={score} detail={`${correct} de ${total} acertos`} />;
   }
 
-  if (step === "intro") {
+  if (!started) {
     return (
-      <div className="space-y-4">
-        <Field label="Seu nome ou apelido" htmlFor="playerName">
-          <Input
-            id="playerName"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            autoComplete="off"
-          />
-        </Field>
-        <Field
-          label="Código da turma"
-          htmlFor="classCode"
-          hint="Opcional — só se a escola/museu informou."
-        >
-          <Input
-            id="classCode"
-            value={classCode}
-            onChange={(e) => setClassCode(e.target.value)}
-            autoComplete="off"
-          />
-        </Field>
-        <Button
-          type="button"
-          className="w-full"
-          disabled={name.trim().length === 0}
-          onClick={() => {
-            setStartedAt(Date.now());
-            setStep("quiz");
-          }}
-        >
-          Começar
-        </Button>
-      </div>
+      <PlayIntro
+        onStart={(n, c) => {
+          setName(n);
+          setClassCode(c);
+          setStartedAt(Date.now());
+          setStarted(true);
+        }}
+      />
     );
   }
 
@@ -95,28 +62,41 @@ export function QuizPlay({
       <input type="hidden" name="startedAt" value={startedAt} />
       <input type="hidden" name="score" value={score} />
 
+      <div className="space-y-1">
+        <ProgressBar value={answered} max={total} />
+        <p className="text-right text-xs text-slate-400">
+          {answered}/{total}
+        </p>
+      </div>
+
       {questions.map((q, qi) => (
         <div key={q.id} className="space-y-2">
           <p className="text-sm font-medium text-slate-900">
             {qi + 1}. {q.prompt}
           </p>
           <div className="space-y-2">
-            {q.options.map((opt, oi) => (
-              <label
-                key={oi}
-                className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-50"
-              >
-                <input
-                  type="radio"
-                  name={`q-${q.id}`}
-                  checked={answers[qi] === oi}
-                  onChange={() =>
-                    setAnswers((a) => a.map((v, i) => (i === qi ? oi : v)))
-                  }
-                />
-                {opt}
-              </label>
-            ))}
+            {q.options.map((opt, oi) => {
+              const selected = answers[qi] === oi;
+              return (
+                <motion.label
+                  key={oi}
+                  whileTap={{ scale: 0.98 }}
+                  className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                    selected
+                      ? "border-blue-300 bg-blue-50 text-blue-900"
+                      : "border-slate-200 text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name={`q-${q.id}`}
+                    checked={selected}
+                    onChange={() => setAnswers((a) => a.map((v, i) => (i === qi ? oi : v)))}
+                  />
+                  {opt}
+                </motion.label>
+              );
+            })}
           </div>
         </div>
       ))}

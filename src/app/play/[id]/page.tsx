@@ -6,7 +6,7 @@ import { getGameType } from "@/lib/games/types";
 import { readQuizQuestions } from "@/lib/games/quiz";
 import { readMemoryPairs } from "@/lib/games/memory";
 import { readCrosswordEntries } from "@/lib/games/crossword";
-import { Card } from "@/components/ui/Card";
+import { PlayStage } from "@/components/play/PlayStage";
 import { PlayForm } from "@/components/play/PlayForm";
 import { QuizPlay } from "@/components/play/QuizPlay";
 import { MemoryPlay } from "@/components/play/MemoryPlay";
@@ -20,11 +20,14 @@ type PublicGame = {
   title: string;
   description: string | null;
   settings: unknown;
+  cover_image_url: string | null;
+  org_name: string | null;
+  primary_color: string | null;
+  logo_url: string | null;
 };
 
 function renderPlayer(game: PublicGame) {
   const type = getGameType(game.settings);
-
   if (type === "quiz") {
     const questions = readQuizQuestions(game.settings);
     if (questions.length) return <QuizPlay gameId={game.id} questions={questions} />;
@@ -37,7 +40,6 @@ function renderPlayer(game: PublicGame) {
     const entries = readCrosswordEntries(game.settings);
     if (entries.length) return <CrosswordPlay gameId={game.id} entries={entries} />;
   }
-  // sem conteúdo válido ainda → formulário de demonstração
   return <PlayForm gameId={game.id} />;
 }
 
@@ -56,16 +58,16 @@ export default async function PlayPage({
   const isCrossword = getGameType(game.settings) === "crossword";
 
   return (
-    <main className="flex min-h-screen items-start justify-center bg-slate-50 px-4 py-12">
-      <div className={isCrossword ? "w-full max-w-2xl" : "w-full max-w-md"}>
-        <div className="mb-6 text-center">
-          <h1 className="text-2xl font-bold text-slate-950">{game.title}</h1>
-          {game.description && (
-            <p className="mt-2 text-sm text-slate-600">{game.description}</p>
-          )}
-        </div>
-        <Card>{renderPlayer(game)}</Card>
-      </div>
-    </main>
+    <PlayStage
+      title={game.title}
+      description={game.description}
+      coverImageUrl={game.cover_image_url}
+      orgName={game.org_name}
+      primaryColor={game.primary_color}
+      logoUrl={game.logo_url}
+      wide={isCrossword}
+    >
+      {renderPlayer(game)}
+    </PlayStage>
   );
 }

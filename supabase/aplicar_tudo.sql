@@ -1019,17 +1019,30 @@ grant execute on function public.accept_invitation(uuid) to authenticated;
  * ===========================================================================
  */
 
--- drop necessário: o tipo de retorno mudou (passou a incluir settings).
+-- drop necessário: o tipo de retorno mudou (inclui settings + marca da org).
 drop function if exists public.get_public_game(uuid);
 create or replace function public.get_public_game(p_game_id uuid)
-returns table (id uuid, title text, description text, organization_id uuid, settings jsonb)
+returns table (
+  id uuid,
+  title text,
+  description text,
+  organization_id uuid,
+  settings jsonb,
+  cover_image_url text,
+  org_name text,
+  primary_color text,
+  logo_url text
+)
 language sql
 stable
 security definer
 set search_path = public
 as $$
-  select g.id, g.title, g.description, g.organization_id, g.settings
+  select
+    g.id, g.title, g.description, g.organization_id, g.settings,
+    g.cover_image_url, o.name as org_name, o.primary_color, o.logo_url
   from public.games g
+  join public.organizations o on o.id = g.organization_id
   where g.id = p_game_id and g.status = 'published';
 $$;
 
