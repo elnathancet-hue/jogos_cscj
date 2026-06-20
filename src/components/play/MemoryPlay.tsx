@@ -26,6 +26,11 @@ function buildDeck(pairs: MemoryPair[]): Card[] {
   return cards;
 }
 
+const HIDDEN_FACE: React.CSSProperties = {
+  backfaceVisibility: "hidden",
+  WebkitBackfaceVisibility: "hidden",
+};
+
 export function MemoryPlay({ gameId, pairs }: { gameId: string; pairs: MemoryPair[] }) {
   const [started, setStarted] = useState(false);
   const [name, setName] = useState("");
@@ -35,6 +40,7 @@ export function MemoryPlay({ gameId, pairs }: { gameId: string; pairs: MemoryPai
   const [deck] = useState<Card[]>(() => buildDeck(pairs));
   const [flipped, setFlipped] = useState<string[]>([]);
   const [matched, setMatched] = useState<string[]>([]);
+  const [wrong, setWrong] = useState<string[]>([]);
   const [attempts, setAttempts] = useState(0);
 
   const [state, action, pending] = useActionState(submitResultAction, EMPTY_FORM_STATE);
@@ -46,12 +52,18 @@ export function MemoryPlay({ gameId, pairs }: { gameId: string; pairs: MemoryPai
     const c1 = deck.find((c) => c.key === k1)!;
     const c2 = deck.find((c) => c.key === k2)!;
     if (c1.pairId === c2.pairId) {
-      setMatched((m) => [...m, c1.pairId]);
-      setFlipped([]);
-    } else {
-      const t = setTimeout(() => setFlipped([]), 900);
+      const t = setTimeout(() => {
+        setMatched((m) => [...m, c1.pairId]);
+        setFlipped([]);
+      }, 350);
       return () => clearTimeout(t);
     }
+    setWrong([k1, k2]);
+    const t = setTimeout(() => {
+      setWrong([]);
+      setFlipped([]);
+    }, 950);
+    return () => clearTimeout(t);
   }, [flipped, deck]);
 
   const done = matched.length === pairs.length;
@@ -83,29 +95,48 @@ export function MemoryPlay({ gameId, pairs }: { gameId: string; pairs: MemoryPai
         </p>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4" style={{ perspective: 800 }}>
         {deck.map((c) => {
-          const isUp = flipped.includes(c.key) || matched.includes(c.pairId);
           const isMatched = matched.includes(c.pairId);
+          const isUp = flipped.includes(c.key) || isMatched;
+          const isWrong = wrong.includes(c.key);
           return (
-            <motion.button
+            <button
               key={c.key}
               type="button"
               disabled={isUp || flipped.length === 2}
               onClick={() => setFlipped((f) => (f.length < 2 ? [...f, c.key] : f))}
-              whileTap={{ scale: 0.94 }}
-              animate={isMatched ? { scale: [1, 1.08, 1] } : {}}
-              className={cn(
-                "flex h-20 items-center justify-center rounded-lg border p-2 text-center text-xs font-medium transition-colors",
-                isMatched
-                  ? "border-emerald-200 bg-emerald-50 text-emerald-900"
-                  : isUp
-                    ? "border-blue-200 bg-blue-50 text-blue-900"
-                    : "border-slate-200 bg-slate-100 text-transparent hover:bg-slate-200",
-              )}
+              className={cn("relative h-20 w-full", isWrong && "animate-shake")}
             >
-              {isUp ? c.label : "?"}
-            </motion.button>
+              <motion.div
+                className="relative h-full w-full"
+                style={{ transformStyle: "preserve-3d" }}
+                animate={{ rotateY: isUp ? 180 : 0, scale: isMatched ? [1, 1.06, 1] : 1 }}
+                transition={{ duration: 0.4 }}
+              >
+                {/* verso */}
+                <div
+                  className="absolute inset-0 flex items-center justify-center rounded-lg border border-slate-200 bg-slate-100 text-lg text-slate-400"
+                  style={HIDDEN_FACE}
+                >
+                  ?
+                </div>
+                {/* frente */}
+                <div
+                  className={cn(
+                    "absolute inset-0 flex items-center justify-center rounded-lg border p-2 text-center text-xs font-medium",
+                    isMatched
+                      ? "border-emerald-300 bg-emerald-50 text-emerald-900 shadow-[0_0_0_3px_rgba(16,185,129,0.25)]"
+                      : isWrong
+                        ? "border-red-300 bg-red-50 text-red-900"
+                        : "border-blue-200 bg-blue-50 text-blue-900",
+                  )}
+                  style={{ ...HIDDEN_FACE, transform: "rotateY(180deg)" }}
+                >
+                  {c.label}
+                </div>
+              </motion.div>
+            </button>
           );
         })}
       </div>
@@ -122,6 +153,7 @@ export function MemoryPlay({ gameId, pairs }: { gameId: string; pairs: MemoryPai
           <input type="hidden" name="classCode" value={classCode} />
           <input type="hidden" name="startedAt" value={startedAt} />
           <input type="hidden" name="score" value={score} />
+          <p className="text-center text-sm font-medium text-emerald-700">Completou! 🎉</p>
           <Button type="submit" className="w-full" disabled={pending}>
             {pending ? "Enviando..." : "Enviar resultado"}
           </Button>
