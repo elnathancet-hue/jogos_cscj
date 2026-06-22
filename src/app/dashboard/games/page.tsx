@@ -70,6 +70,11 @@ export default async function GamesPage() {
         action={
           <div className="flex items-center gap-2">
             {hasPublished && (
+              <LinkButton href={`/o/${active.org.id}`} target="_blank" rel="noreferrer" variant="ghost">
+                Catálogo
+              </LinkButton>
+            )}
+            {hasPublished && (
               <LinkButton
                 href={`/kiosk/org/${active.org.id}`}
                 target="_blank"

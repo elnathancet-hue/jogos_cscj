@@ -129,9 +129,13 @@ export function QuizPlay({
       <input type="hidden" name="startedAt" value={startedAt} />
       <input type="hidden" name="score" value={score} />
 
-      <div className="space-y-1">
+      <div className="space-y-2">
         <ProgressBar value={index + 1} max={total} />
-        <p className="text-right text-xs text-slate-400">Pergunta {index + 1} de {total}</p>
+        <div className="flex justify-center">
+          <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">
+            Pergunta {index + 1} de {total}
+          </span>
+        </div>
       </div>
 
       {timed && !answered && (
@@ -160,12 +164,14 @@ export function QuizPlay({
 
           {q.imageUrl && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={q.imageUrl} alt="" className="max-h-48 w-full rounded-lg object-cover" />
+            <img src={q.imageUrl} alt="" className="max-h-48 w-full rounded-xl object-cover" />
           )}
 
-          <p className="font-display text-lg font-semibold text-slate-900">{q.prompt}</p>
+          <div className="rounded-2xl border-2 border-blue-100 bg-blue-50/40 p-5 text-center">
+            <p className="text-xl font-bold leading-snug text-slate-900">{q.prompt}</p>
+          </div>
 
-          <div className="space-y-2">
+          <div className="grid gap-3 sm:grid-cols-2">
             {q.options.map((opt, oi) => {
               const isCorrect = oi === q.answerIndex;
               const isChosen = chosen === oi;
@@ -180,7 +186,7 @@ export function QuizPlay({
                   whileTap={answered ? undefined : { scale: 0.98 }}
                   animate={showCorrect ? { scale: [1, 1.05, 1] } : {}}
                   className={cn(
-                    "flex w-full items-center gap-3 rounded-xl border-2 px-3 py-3 text-left text-sm font-medium transition-colors",
+                    "flex w-full items-center gap-3 rounded-2xl border-2 px-4 py-4 text-left text-base font-medium transition-colors",
                     showCorrect && "border-emerald-400 bg-emerald-50 text-emerald-900",
                     showWrong && "border-red-400 bg-red-50 text-red-900 animate-shake",
                     !answered && "border-slate-200 text-slate-700 hover:border-blue-400 hover:bg-blue-50",
