@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
@@ -6,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { hasPermission, type MemberRole } from "@/lib/auth/permissions";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
+import { LinkButton } from "@/components/ui/LinkButton";
 import { EmptyState } from "@/components/ui/EmptyState";
 
 export const metadata: Metadata = { title: "Resultados · Jogos CSCJ" };
@@ -83,9 +83,9 @@ export default async function GameResultsPage({
       />
 
       <div className="mb-4">
-        <Link href={`/dashboard/games/${id}`} className="text-sm text-blue-700 hover:underline">
+        <LinkButton href={`/dashboard/games/${id}`} variant="ghost" size="sm">
           ← Voltar para o jogo
-        </Link>
+        </LinkButton>
       </div>
 
       {rows.length === 0 ? (

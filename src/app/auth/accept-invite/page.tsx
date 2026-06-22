@@ -1,8 +1,8 @@
-import Link from "next/link";
 import type { Metadata } from "next";
 
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/Card";
+import { LinkButton } from "@/components/ui/LinkButton";
 import { AcceptInviteForm } from "@/components/auth/AcceptInviteForm";
 
 export const metadata: Metadata = { title: "Aceitar convite · Jogos CSCJ" };
@@ -39,19 +39,13 @@ export default async function AcceptInvitePage({
         <p className="mb-6 text-sm text-slate-600">
           Entre ou crie uma conta e abra este link novamente para aceitar o convite.
         </p>
-        <div className="flex gap-3">
-          <Link
-            href="/auth/login"
-            className="inline-flex h-10 flex-1 items-center justify-center rounded-lg border border-blue-600 bg-blue-600 px-4 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-          >
+        <div className="grid grid-cols-2 gap-3">
+          <LinkButton href="/auth/login" variant="primary">
             Entrar
-          </Link>
-          <Link
-            href="/auth/register"
-            className="inline-flex h-10 flex-1 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
-          >
+          </LinkButton>
+          <LinkButton href="/auth/register" variant="secondary">
             Criar conta
-          </Link>
+          </LinkButton>
         </div>
         <p className="mt-4 break-all text-xs text-slate-400">{next}</p>
       </Card>
