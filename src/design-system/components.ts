@@ -11,7 +11,12 @@ export type ComponentStatus = "ready" | "planned";
 
 export const DESIGN_SYSTEM_COMPONENTS: Record<string, ComponentStatus> = {
   Button: "ready",
+  LinkButton: "ready",
   Card: "ready",
+  MetricCard: "ready",
+  ActionCard: "ready",
+  DangerZone: "ready",
+  PublicLinkBox: "ready",
   Input: "ready",
   Textarea: "ready",
   Select: "ready",

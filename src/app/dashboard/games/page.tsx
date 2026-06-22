@@ -1,27 +1,18 @@
-import Link from "next/link";
 import type { Metadata } from "next";
 
 import { createClient } from "@/lib/supabase/server";
 import { getActiveOrganization } from "@/lib/auth/org";
 import { hasPermission } from "@/lib/auth/permissions";
-import {
-  GAME_STATUS_LABELS,
-  type GameStatus,
-} from "@/lib/schema/game.schema";
+import { getGameType, GAME_TYPE_LABELS } from "@/lib/games/types";
+import type { GameStatus } from "@/lib/schema/game.schema";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { Card } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
+import { LinkButton } from "@/components/ui/LinkButton";
 import { EmptyState } from "@/components/ui/EmptyState";
-import type { BadgeVariant } from "@/design-system/variants";
+import { GamesBrowser } from "@/components/dashboard/GamesBrowser";
+import type { GameCardData } from "@/components/dashboard/GameCard";
 
 export const metadata: Metadata = { title: "Jogos · Jogos CSCJ" };
 export const dynamic = "force-dynamic";
-
-const STATUS_VARIANT: Record<GameStatus, BadgeVariant> = {
-  draft: "neutral",
-  published: "success",
-  archived: "warning",
-};
 
 export default async function GamesPage() {
   const active = await getActiveOrganization();
@@ -39,43 +30,59 @@ export default async function GamesPage() {
 
   const canCreate = hasPermission(active.role, "games.create");
   const supabase = await createClient();
-  const { data: games } = await supabase
-    .from("games")
-    .select("id, title, description, status")
-    .eq("organization_id", active.org.id)
-    .order("created_at", { ascending: false });
 
-  const list = (games ?? []) as {
-    id: string;
-    title: string;
-    description: string | null;
-    status: GameStatus;
-  }[];
-  const hasPublished = list.some((g) => g.status === "published");
+  const [{ data: games }, { data: rs }] = await Promise.all([
+    supabase
+      .from("games")
+      .select("id, title, description, status, settings, updated_at")
+      .eq("organization_id", active.org.id)
+      .order("created_at", { ascending: false }),
+    supabase.from("game_results").select("game_id").eq("organization_id", active.org.id),
+  ]);
+
+  const sessionsByGame = new Map<string, number>();
+  (rs ?? []).forEach((r) =>
+    sessionsByGame.set(r.game_id, (sessionsByGame.get(r.game_id) ?? 0) + 1),
+  );
+
+  const list: GameCardData[] = (games ?? []).map((g) => {
+    const type = getGameType(g.settings);
+    const status = g.status as GameStatus;
+    return {
+      id: g.id,
+      title: g.title,
+      description: g.description,
+      status,
+      typeLabel: type ? GAME_TYPE_LABELS[type] : "—",
+      sessions: sessionsByGame.get(g.id) ?? 0,
+      updatedAt: g.updated_at,
+      published: status === "published",
+    };
+  });
+
+  const hasPublished = list.some((g) => g.published);
 
   return (
     <>
       <PageHeader
         title="Jogos"
-        description={`Jogos de ${active.org.name}.`}
+        description="Crie, edite e publique os jogos da organização."
         action={
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {hasPublished && (
-              <Link
+              <LinkButton
                 href={`/kiosk/org/${active.org.id}`}
                 target="_blank"
-                className="text-sm font-medium text-blue-700 hover:underline"
+                rel="noreferrer"
+                variant="secondary"
               >
-                Modo TV (todos) ↗
-              </Link>
+                Modo TV
+              </LinkButton>
             )}
             {canCreate && (
-              <Link
-                href="/dashboard/games/new"
-                className="inline-flex h-10 items-center justify-center rounded-lg border border-blue-600 bg-blue-600 px-4 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-              >
+              <LinkButton href="/dashboard/games/new" variant="primary">
                 Novo jogo
-              </Link>
+              </LinkButton>
             )}
           </div>
         }
@@ -84,32 +91,11 @@ export default async function GamesPage() {
       {list.length === 0 ? (
         <EmptyState
           title="Nenhum jogo ainda"
-          description={
-            canCreate
-              ? "Crie o primeiro jogo da organização."
-              : "Quando houver jogos, eles aparecem aqui."
-          }
+          description={canCreate ? "Crie o primeiro jogo da organização." : "Quando houver jogos, eles aparecem aqui."}
+          action={canCreate ? <LinkButton href="/dashboard/games/new" variant="primary">Novo jogo</LinkButton> : undefined}
         />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {list.map((game) => (
-            <Link key={game.id} href={`/dashboard/games/${game.id}`} className="block">
-              <Card className="h-full transition-colors hover:border-blue-300">
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="text-base font-semibold text-slate-950">{game.title}</h3>
-                  <Badge variant={STATUS_VARIANT[game.status]}>
-                    {GAME_STATUS_LABELS[game.status]}
-                  </Badge>
-                </div>
-                {game.description && (
-                  <p className="mt-2 line-clamp-2 text-sm text-slate-600">
-                    {game.description}
-                  </p>
-                )}
-              </Card>
-            </Link>
-          ))}
-        </div>
+        <GamesBrowser games={list} />
       )}
     </>
   );

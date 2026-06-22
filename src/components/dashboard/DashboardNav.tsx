@@ -10,12 +10,12 @@ import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 
 const LINKS = [
-  { href: "/dashboard", label: "Visão geral", icon: "🏠" },
-  { href: "/dashboard/games", label: "Jogos", icon: "🎮" },
-  { href: "/dashboard/classes", label: "Turmas", icon: "🎒" },
-  { href: "/dashboard/team", label: "Equipe", icon: "👥" },
-  { href: "/dashboard/organization", label: "Organização", icon: "🏛️" },
-  { href: "/dashboard/profile", label: "Perfil", icon: "👤" },
+  { href: "/dashboard", label: "Visão geral" },
+  { href: "/dashboard/games", label: "Jogos" },
+  { href: "/dashboard/classes", label: "Turmas" },
+  { href: "/dashboard/team", label: "Equipe" },
+  { href: "/dashboard/organization", label: "Organização" },
+  { href: "/dashboard/profile", label: "Perfil" },
 ];
 
 type NavOrg = { id: string; name: string };
@@ -54,7 +54,7 @@ export function DashboardNav({
               </form>
               <Link
                 href="/dashboard/organizations"
-                className="text-xs text-blue-700 hover:underline"
+                className="rounded-md border border-slate-200 px-2 py-1 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
               >
                 Gerenciar
               </Link>
@@ -74,13 +74,12 @@ export function DashboardNav({
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
+                    "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
                     active
-                      ? "bg-blue-50 text-blue-700"
+                      ? "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-100"
                       : "text-slate-600 hover:bg-slate-50 hover:text-slate-950",
                   )}
                 >
-                  <span className="text-xs">{link.icon}</span>
                   {link.label}
                 </Link>
               );

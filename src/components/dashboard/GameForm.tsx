@@ -80,7 +80,7 @@ export function GameForm({ mode, defaults }: GameFormProps) {
       </Field>
 
       <Button type="submit" disabled={pending}>
-        {pending ? "Salvando..." : isEdit ? "Salvar" : "Criar jogo"}
+        {pending ? "Salvando..." : isEdit ? "Salvar alterações" : "Criar jogo"}
       </Button>
     </form>
   );

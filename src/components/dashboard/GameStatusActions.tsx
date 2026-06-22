@@ -1,64 +1,44 @@
-"use client";
-
-import { setGameStatusAction, deleteGameAction } from "@/app/dashboard/games/actions";
+import { setGameStatusAction } from "@/app/dashboard/games/actions";
 import type { GameStatus } from "@/lib/schema/game.schema";
 import { Button } from "@/components/ui/Button";
 
-type GameStatusActionsProps = {
-  gameId: string;
-  status: GameStatus;
-  canPublish: boolean;
-  canDelete: boolean;
-};
-
-function StatusButton({
-  gameId,
-  status,
-  label,
-  variant = "secondary",
-}: {
-  gameId: string;
-  status: GameStatus;
-  label: string;
-  variant?: "primary" | "secondary" | "ghost";
-}) {
-  return (
-    <form action={setGameStatusAction}>
-      <input type="hidden" name="gameId" value={gameId} />
-      <input type="hidden" name="status" value={status} />
-      <Button type="submit" variant={variant} size="sm">
-        {label}
-      </Button>
-    </form>
-  );
-}
-
+// Só transições NÃO destrutivas (publicar/despublicar/reativar).
+// Arquivar e excluir ficam na DangerZone.
 export function GameStatusActions({
   gameId,
   status,
   canPublish,
-  canDelete,
-}: GameStatusActionsProps) {
+}: {
+  gameId: string;
+  status: GameStatus;
+  canPublish: boolean;
+}) {
   return (
     <div className="flex flex-wrap items-center gap-2">
       {status !== "published" && canPublish && (
-        <StatusButton gameId={gameId} status="published" label="Publicar" variant="primary" />
+        <form action={setGameStatusAction}>
+          <input type="hidden" name="gameId" value={gameId} />
+          <input type="hidden" name="status" value="published" />
+          <Button type="submit" variant="primary" size="sm">
+            Publicar
+          </Button>
+        </form>
       )}
-      {status === "published" && canPublish && (
-        <StatusButton gameId={gameId} status="draft" label="Despublicar" />
-      )}
-      {status !== "archived" && (
-        <StatusButton gameId={gameId} status="archived" label="Arquivar" variant="ghost" />
+      {status === "published" && (
+        <form action={setGameStatusAction}>
+          <input type="hidden" name="gameId" value={gameId} />
+          <input type="hidden" name="status" value="draft" />
+          <Button type="submit" variant="secondary" size="sm">
+            Despublicar
+          </Button>
+        </form>
       )}
       {status === "archived" && (
-        <StatusButton gameId={gameId} status="draft" label="Reativar" />
-      )}
-
-      {canDelete && (
-        <form action={deleteGameAction}>
+        <form action={setGameStatusAction}>
           <input type="hidden" name="gameId" value={gameId} />
-          <Button type="submit" variant="danger" size="sm">
-            Excluir
+          <input type="hidden" name="status" value="draft" />
+          <Button type="submit" variant="secondary" size="sm">
+            Reativar
           </Button>
         </form>
       )}
