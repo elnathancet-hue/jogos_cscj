@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { createClient } from "@/lib/supabase/server";
 import { getActiveOrganization } from "@/lib/auth/org";
+import { getCurrentUser } from "@/lib/auth/session";
 import type { MemberRole } from "@/lib/auth/permissions";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
@@ -32,9 +33,7 @@ export default async function TeamPage() {
 
   const isAdmin = active.role === "org_admin";
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   // Membros ativos + perfis (join feito em JS — não há FK direta members→profiles).
   const { data: rawMembers } = await supabase
