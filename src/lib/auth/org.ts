@@ -1,9 +1,11 @@
 // src/lib/auth/org.ts
 import "server-only";
 
+import { cache } from "react";
 import { cookies } from "next/headers";
 
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth/session";
 import type { MemberRole } from "@/lib/auth/permissions";
 
 export const ACTIVE_ORG_COOKIE = "active_org";
@@ -22,12 +24,10 @@ export type OrgSummary = {
 
 export type Membership = { role: MemberRole; org: OrgSummary };
 
-/** Todas as organizações ativas do usuário (ordenadas por entrada). */
-export async function getMyOrganizations(): Promise<Membership[]> {
+/** Todas as organizações ativas do usuário (ordenadas por entrada). Memoizado por request. */
+export const getMyOrganizations = cache(async (): Promise<Membership[]> => {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return [];
 
   const { data } = await supabase
@@ -45,13 +45,13 @@ export async function getMyOrganizations(): Promise<Membership[]> {
       role: m.role as MemberRole,
       org: m.organizations as unknown as OrgSummary,
     }));
-}
+});
 
 /**
  * Organização ativa: a salva no cookie (se o usuário ainda for membro) ou,
- * na falta dela, a primeira organização.
+ * na falta dela, a primeira organização. Memoizado por request.
  */
-export async function getActiveOrganization(): Promise<Membership | null> {
+export const getActiveOrganization = cache(async (): Promise<Membership | null> => {
   const all = await getMyOrganizations();
   if (all.length === 0) return null;
 
@@ -59,4 +59,4 @@ export async function getActiveOrganization(): Promise<Membership | null> {
   const activeId = cookieStore.get(ACTIVE_ORG_COOKIE)?.value;
   const found = activeId ? all.find((m) => m.org.id === activeId) : undefined;
   return found ?? all[0];
-}
+});
