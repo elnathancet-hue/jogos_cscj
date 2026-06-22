@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { createClient } from "@/lib/supabase/server";
-import { updateOrganizationSchema } from "@/lib/schema/organization.schema";
+import { updateOrganizationSchema, themeSchema } from "@/lib/schema/organization.schema";
 import type { FormState } from "@/lib/forms";
 
 export async function updateOrganizationAction(
@@ -25,6 +25,19 @@ export async function updateOrganizationAction(
   }
 
   const { name, organizationType, primaryColor, logoUrl } = parsed.data;
+
+  // Tema (opcional): JSON vindo do ThemePicker.
+  let theme: unknown;
+  const rawTheme = formData.get("theme");
+  if (rawTheme) {
+    try {
+      const t = themeSchema.safeParse(JSON.parse(String(rawTheme)));
+      if (t.success) theme = t.data;
+    } catch {
+      // ignora tema inválido
+    }
+  }
+
   const supabase = await createClient();
 
   // RLS garante que só org_admin/super admin consegue atualizar.
@@ -35,6 +48,7 @@ export async function updateOrganizationAction(
       organization_type: organizationType,
       primary_color: primaryColor || null,
       logo_url: logoUrl || null,
+      ...(theme !== undefined ? { theme } : {}),
     })
     .eq("id", orgId.data)
     .select("id");

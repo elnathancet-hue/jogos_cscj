@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
 import { createClient } from "@/lib/supabase/server";
+import { resolveTheme } from "@/lib/play/theme";
 import { Kiosk, type KioskGame } from "@/components/play/Kiosk";
 
 export const metadata: Metadata = { title: "Modo TV · Jogos CSCJ" };
@@ -17,6 +18,7 @@ type PublicGame = {
   org_name: string | null;
   primary_color: string | null;
   logo_url: string | null;
+  theme: unknown;
 };
 
 export default async function KioskPage({
@@ -47,5 +49,5 @@ export default async function KioskPage({
     logoUrl: g.logo_url,
   };
 
-  return <Kiosk games={[game]} origin={origin} />;
+  return <Kiosk games={[game]} origin={origin} theme={resolveTheme(g.theme, g.primary_color)} />;
 }

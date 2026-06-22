@@ -17,6 +17,7 @@ export type OrgSummary = {
   organization_type: "school" | "museum" | "company" | "cultural_project" | "other";
   plan: string;
   status: string;
+  theme: unknown;
 };
 
 export type Membership = { role: MemberRole; org: OrgSummary };
@@ -32,7 +33,7 @@ export async function getMyOrganizations(): Promise<Membership[]> {
   const { data } = await supabase
     .from("organization_members")
     .select(
-      "role, organizations(id, name, slug, logo_url, primary_color, organization_type, plan, status)",
+      "role, organizations(id, name, slug, logo_url, primary_color, organization_type, plan, status, theme)",
     )
     .eq("user_id", user.id)
     .eq("status", "active")

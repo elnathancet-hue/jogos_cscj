@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
 import { createClient } from "@/lib/supabase/server";
+import { resolveTheme } from "@/lib/play/theme";
 import { PlayStage } from "@/components/play/PlayStage";
 import { renderGamePlayer, isWideType } from "@/components/play/render-player";
 
@@ -17,6 +18,7 @@ type PublicGame = {
   org_name: string | null;
   primary_color: string | null;
   logo_url: string | null;
+  theme: unknown;
 };
 
 export default async function PlayPage({
@@ -37,8 +39,8 @@ export default async function PlayPage({
       description={game.description}
       coverImageUrl={game.cover_image_url}
       orgName={game.org_name}
-      primaryColor={game.primary_color}
       logoUrl={game.logo_url}
+      theme={resolveTheme(game.theme, game.primary_color)}
       wide={isWideType(game.settings)}
     >
       {renderGamePlayer(game)}

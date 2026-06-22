@@ -8,6 +8,7 @@ import { initSound, playClick } from "@/lib/play/sound";
 import { renderGamePlayer, isWideType } from "@/components/play/render-player";
 import { SoundToggle } from "@/components/play/SoundToggle";
 import { LiveRanking } from "@/components/play/LiveRanking";
+import type { ResolvedTheme } from "@/lib/play/theme";
 
 export type KioskGame = {
   id: string;
@@ -23,7 +24,15 @@ export type KioskGame = {
 const RETURN_SECONDS = 12;
 const IDLE_ADVANCE_MS = 22000;
 
-export function Kiosk({ games, origin }: { games: KioskGame[]; origin: string }) {
+export function Kiosk({
+  games,
+  origin,
+  theme,
+}: {
+  games: KioskGame[];
+  origin: string;
+  theme: ResolvedTheme;
+}) {
   const [index, setIndex] = useState(0);
   const [phase, setPhase] = useState<"attract" | "playing">("attract");
   const [round, setRound] = useState(0);
@@ -31,7 +40,7 @@ export function Kiosk({ games, origin }: { games: KioskGame[]; origin: string })
   const [secs, setSecs] = useState(RETURN_SECONDS);
 
   const game = games[index];
-  const accent = game.primaryColor || "#7c3aed";
+  const accent = theme.accent;
   const wide = isWideType(game.settings);
   const isPlaylist = games.length > 1;
   const playUrl = `${origin}/play/${game.id}`;
@@ -86,8 +95,8 @@ export function Kiosk({ games, origin }: { games: KioskGame[]; origin: string })
 
   return (
     <main
-      className="relative min-h-screen overflow-hidden"
-      style={{ background: `linear-gradient(160deg, ${accent} 0%, #0f172a 100%)` }}
+      className={`relative min-h-screen overflow-hidden ${theme.fontClass}`}
+      style={{ background: `linear-gradient(160deg, ${theme.bgFrom} 0%, ${theme.bgTo} 100%)` }}
     >
       <div className="pointer-events-none absolute -left-24 -top-24 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
       <div className="pointer-events-none absolute -right-24 top-1/3 h-96 w-96 rounded-full bg-white/10 blur-3xl" />
@@ -135,7 +144,7 @@ export function Kiosk({ games, origin }: { games: KioskGame[]; origin: string })
                 />
               )}
               <div className="space-y-2">
-                <h1 className="font-display text-5xl font-bold drop-shadow sm:text-6xl">
+                <h1 className="text-5xl font-bold drop-shadow sm:text-6xl">
                   {game.title}
                 </h1>
                 {game.description && (
@@ -146,7 +155,7 @@ export function Kiosk({ games, origin }: { games: KioskGame[]; origin: string })
               <motion.div
                 animate={{ scale: [1, 1.06, 1] }}
                 transition={{ duration: 1.4, repeat: Infinity }}
-                className="rounded-full bg-white px-10 py-4 font-display text-2xl font-bold shadow-xl"
+                className="rounded-full bg-white px-10 py-4 text-2xl font-bold shadow-xl"
                 style={{ color: accent }}
               >
                 ▶ Toque para jogar
@@ -188,7 +197,7 @@ export function Kiosk({ games, origin }: { games: KioskGame[]; origin: string })
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={game.logoUrl} alt="" className="h-7 w-7 rounded-full bg-white/20 object-cover" />
                 )}
-                <span className="font-display text-lg font-bold">{game.title}</span>
+                <span className="text-lg font-bold">{game.title}</span>
               </div>
               <div className="p-6">
                 <div key={round}>{renderPlayer()}</div>

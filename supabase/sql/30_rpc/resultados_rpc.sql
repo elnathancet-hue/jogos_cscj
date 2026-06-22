@@ -21,7 +21,8 @@ returns table (
   cover_image_url text,
   org_name text,
   primary_color text,
-  logo_url text
+  logo_url text,
+  theme jsonb
 )
 language sql
 stable
@@ -30,7 +31,7 @@ set search_path = public
 as $$
   select
     g.id, g.title, g.description, g.organization_id, g.settings,
-    g.cover_image_url, o.name as org_name, o.primary_color, o.logo_url
+    g.cover_image_url, o.name as org_name, o.primary_color, o.logo_url, o.theme
   from public.games g
   join public.organizations o on o.id = g.organization_id
   where g.id = p_game_id and g.status = 'published';
@@ -100,6 +101,7 @@ grant execute on function public.submit_game_result(uuid, text, integer, integer
 -- get_org_public_games(org_id): todos os jogos PUBLICADOS de uma organização,
 -- para o modo TV em playlist (anon pode ler).
 -- ---------------------------------------------------------------------------
+drop function if exists public.get_org_public_games(uuid);
 create or replace function public.get_org_public_games(p_org_id uuid)
 returns table (
   id uuid,
@@ -110,7 +112,8 @@ returns table (
   cover_image_url text,
   org_name text,
   primary_color text,
-  logo_url text
+  logo_url text,
+  theme jsonb
 )
 language sql
 stable
@@ -119,7 +122,7 @@ set search_path = public
 as $$
   select
     g.id, g.title, g.description, g.organization_id, g.settings,
-    g.cover_image_url, o.name as org_name, o.primary_color, o.logo_url
+    g.cover_image_url, o.name as org_name, o.primary_color, o.logo_url, o.theme
   from public.games g
   join public.organizations o on o.id = g.organization_id
   where g.organization_id = p_org_id and g.status = 'published'

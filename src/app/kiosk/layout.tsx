@@ -1,5 +1,5 @@
-import { fredoka } from "@/lib/fonts";
+import { playFontVars } from "@/lib/fonts";
 
 export default function KioskLayout({ children }: { children: React.ReactNode }) {
-  return <div className={`${fredoka.variable} font-display`}>{children}</div>;
+  return <div className={playFontVars}>{children}</div>;
 }

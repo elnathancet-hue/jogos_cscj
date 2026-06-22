@@ -14,8 +14,9 @@ const config: Config = {
         },
       },
       fontFamily: {
-        // fonte arredondada/divertida usada na experiência de jogar (/play)
+        // fontes da experiência de jogar (/play, /kiosk) — escolhidas pelo tema
         display: ["var(--font-fredoka)", "system-ui", "sans-serif"],
+        elegant: ["var(--font-playfair)", "Georgia", "serif"],
       },
       keyframes: {
         shake: {

@@ -13,6 +13,8 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { ImageUpload } from "@/components/ui/ImageUpload";
+import { ThemePicker } from "@/components/dashboard/ThemePicker";
+import type { OrgTheme } from "@/lib/play/theme";
 
 type OrganizationFormProps = {
   canEdit: boolean;
@@ -23,6 +25,7 @@ type OrganizationFormProps = {
     organizationType: (typeof ORGANIZATION_TYPES)[number];
     primaryColor: string;
     logoUrl: string;
+    theme: OrgTheme | null;
   };
 };
 
@@ -91,6 +94,10 @@ export function OrganizationForm({ canEdit, defaults }: OrganizationFormProps) {
         ) : (
           <Input value={defaults.logoUrl} disabled readOnly />
         )}
+      </Field>
+
+      <Field label="Tema visual (jogos e Modo TV)" hint="Cores e fonte da experiência de jogar.">
+        <ThemePicker initial={defaults.theme} canEdit={canEdit} />
       </Field>
 
       {canEdit && (

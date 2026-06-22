@@ -32,6 +32,9 @@ create table if not exists public.organizations (
 comment on table public.organizations is
   'Tenant raiz. Todo jogo/equipe/resultado pertence a uma organização.';
 
+-- Tema visual da experiência de jogar/TV: { preset, accent, bgFrom, bgTo, font }.
+alter table public.organizations add column if not exists theme jsonb;
+
 alter table public.organizations enable row level security;
 
 -- --- Políticas RLS ---------------------------------------------------------

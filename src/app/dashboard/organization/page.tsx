@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { getActiveOrganization } from "@/lib/auth/org";
+import type { OrgTheme } from "@/lib/play/theme";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -42,6 +43,7 @@ export default async function OrganizationPage() {
             organizationType: org.organization_type,
             primaryColor: org.primary_color ?? "",
             logoUrl: org.logo_url ?? "",
+            theme: (org.theme as OrgTheme | null) ?? null,
           }}
         />
       </Card>
